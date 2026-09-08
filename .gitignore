@@ -1,0 +1,48 @@
+# SwiftPM and Xcode build products / machine-local state.
+.build/
+.swiftpm/xcode/
+DerivedData/
+/build/
+/dist/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.xcresult/
+*.dSYM/
+
+# Generated QA artifacts and temporary output.
+/output/
+/tmp/
+/temp/
+/.cache/
+*.log
+*.tmp
+*.temp
+
+# macOS and editor-local state.
+.DS_Store
+._*
+.AppleDouble/
+.LSOverride
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local credentials and signing private keys; retain safe configuration examples.
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.*.example
+!.env.*.template
+*.p12
+*.pfx
+*.key
+*.keychain
+*.keychain-db
+
+# Keep Package.resolved, shared .codex environment configuration, documentation,
+# source files, and official image / icon assets under version control.

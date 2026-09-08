@@ -1,0 +1,777 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-09",
+  "language": "zh-Hans",
+  "scope": "10 resource groups; official pages, READMEs, license files and paper abstract; no dataset, music, video or weights downloaded",
+  "status_semantics": "Each license decision applies only to its asset_scope. unverified/unresolved is not permission. Separate underlying media, body models, training data and weights may have independent terms.",
+  "sources": {
+    "aist_home": {
+      "url": "https://aistdancedb.ongaaccel.jp/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aist_terms": {
+      "url": "https://aistdancedb.ongaaccel.jp/terms_of_use/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_facts": {
+      "url": "https://google.github.io/aistplusplus_dataset/factsfigures.html",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_formats": {
+      "url": "https://google.github.io/aistplusplus_dataset/download.html",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_code_license": {
+      "url": "https://raw.githubusercontent.com/google/aistplusplus_api/main/LICENSE",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "ccby4": {
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "fine_paper": {
+      "url": "https://openaccess.thecvf.com/content/ICCV2023/html/Li_FineDance_A_Fine-grained_Choreography_Dataset_for_3D_Full_Body_Dance_ICCV_2023_paper.html",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "fine_readme": {
+      "url": "https://raw.githubusercontent.com/li-ronghui/FineDance/main/README.md",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "fine_license": {
+      "url": "https://raw.githubusercontent.com/li-ronghui/FineDance/main/LICENSE",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "beat_project": {
+      "url": "https://pantomatrix.github.io/BEAT/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "beat_repo": {
+      "url": "https://raw.githubusercontent.com/PantoMatrix/PantoMatrix/main/README.md",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "beat_tree": {
+      "url": "https://api.github.com/repos/PantoMatrix/PantoMatrix/contents/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "beat_card": {
+      "url": "https://huggingface.co/datasets/H-Liu1997/BEAT/raw/main/README.md",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "beat2_card": {
+      "url": "https://huggingface.co/datasets/H-Liu1997/BEAT2/raw/main/README.md",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "emage_project": {
+      "url": "https://pantomatrix.github.io/EMAGE/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "amass_license": {
+      "url": "https://amass.is.tue.mpg.de/license.html",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "humanml_readme": {
+      "url": "https://raw.githubusercontent.com/EricGuo5513/HumanML3D/main/README.md",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "humanml_code_license": {
+      "url": "https://raw.githubusercontent.com/EricGuo5513/HumanML3D/main/LICENSE",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "edge_project": {
+      "url": "https://edge-dance.github.io/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "edge_readme": {
+      "url": "https://raw.githubusercontent.com/Stanford-TML/EDGE/main/README.md",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "edge_code_license": {
+      "url": "https://raw.githubusercontent.com/Stanford-TML/EDGE/main/LICENSE",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "smpl_model_license": {
+      "url": "https://smpl.is.tue.mpg.de/modellicense.html",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "smpl_body_license": {
+      "url": "https://smpl.is.tue.mpg.de/bodylicense.html",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "steezy_home": {
+      "url": "https://www.steezy.co/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "steezy_terms": {
+      "url": "https://www.steezy.co/terms",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "redbull_dance_candidate": {
+      "url": "https://www.redbull.com/int-en/tags/dance",
+      "access_status": "http_403",
+      "checked_at": "2026-09-09"
+    },
+    "redbull_tutorial_candidate": {
+      "url": "https://www.redbull.com/int-en/dance-tutorials",
+      "access_status": "http_403",
+      "checked_at": "2026-09-09"
+    }
+  },
+  "resources": [
+    {
+      "id": "aist-dance-db",
+      "name": "AIST Dance Video Database",
+      "kind": "dance_video_music_dataset",
+      "homepage": "https://aistdancedb.ongaaccel.jp/",
+      "relevance": "high",
+      "first_release_decision": "external_link_or_separately_license",
+      "facts": {
+        "dance_genres": 10,
+        "professional_dancers": 40,
+        "max_cameras": 9
+      },
+      "suitable_for": [
+        "舞种分类研究",
+        "多视角姿态验证",
+        "音乐与舞蹈关系研究"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "original_video_and_music",
+          "license_label": "AIST Terms of Use",
+          "commercial_use_status": "prior_written_permission_required",
+          "redistribution_status": "unauthorized_redistribution_prohibited",
+          "evidence_source_ids": [
+            "aist_terms"
+          ],
+          "notes": "仅学术研究；使用前填 Application Form。Copyright-cleared music 不代表开发者获得商用分发许可。"
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "aist_terms",
+          "quote": "AIST Dance DB may not be used for any purpose other than academic research."
+        },
+        {
+          "source_id": "aist_terms",
+          "quote": "Use for commercial purposes is not permitted without prior written consent from AIST."
+        },
+        {
+          "source_id": "aist_terms",
+          "quote": "Unauthorized redistribution of any content of the database is prohibited."
+        }
+      ],
+      "caveats": [
+        "舞种与场景标签不等于分步教学动作和正确性标签。",
+        "未下载实际数据。"
+      ]
+    },
+    {
+      "id": "aistplusplus",
+      "name": "AIST++",
+      "kind": "dance_pose_annotation_dataset",
+      "homepage": "https://google.github.io/aistplusplus_dataset/",
+      "relevance": "high",
+      "first_release_decision": "optional_attributed_keypoint_adapter",
+      "facts": {
+        "sequences": 1408,
+        "dance_genres": 10,
+        "subjects": 30,
+        "views": 9,
+        "frames_approximately": 10100000,
+        "annotation_fps": 60,
+        "sequence_duration_seconds": [
+          7.4,
+          48.0
+        ],
+        "coco_joints": 17,
+        "smpl_joints": 24,
+        "formats": [
+          "pickle",
+          "COCO 2D/3D keypoints",
+          "SMPL pose parameters"
+        ]
+      },
+      "suitable_for": [
+        "动作表示与关节映射",
+        "跟练算法离线研究",
+        "动作检索种子",
+        "音乐动作对齐研究"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "google_annotations",
+          "license_label": "CC-BY-4.0",
+          "commercial_use_status": "permitted_with_conditions",
+          "redistribution_status": "permitted_with_conditions",
+          "evidence_source_ids": [
+            "aistpp_facts",
+            "ccby4"
+          ],
+          "notes": "署名、许可链接、标示修改；不得额外限制许可权利；许可不自动覆盖第三方肖像/音乐/人体模型。"
+        },
+        {
+          "asset_scope": "python_api_code",
+          "license_label": "Apache-2.0",
+          "commercial_use_status": "permitted_with_conditions",
+          "redistribution_status": "permitted_with_conditions",
+          "evidence_source_ids": [
+            "aistpp_code_license"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "original_video_and_music",
+          "license_label": "AIST Terms of Use",
+          "commercial_use_status": "prior_written_permission_required",
+          "redistribution_status": "unauthorized_redistribution_prohibited",
+          "evidence_source_ids": [
+            "aist_terms"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "smpl_model_files_if_used",
+          "license_label": "Separate SMPL license",
+          "commercial_use_status": "separate_asset_review_required",
+          "redistribution_status": "separate_asset_review_required",
+          "evidence_source_ids": [
+            "smpl_model_license",
+            "smpl_body_license"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "aistpp_facts",
+          "quote": "The annotations are licensed by Google LLC under CC BY 4.0 license."
+        },
+        {
+          "source_id": "aistpp_formats",
+          "quote": "Our annotations are frame-by-frame under exact 60 FPS."
+        },
+        {
+          "source_id": "aistpp_formats",
+          "quote": "We recommend excluding those annotations in your research or study."
+        }
+      ],
+      "caveats": [
+        "原视频帧率可能与标注不同，必须对齐时间。",
+        "ignore_list.txt 是不良重建排除清单。",
+        "评估姿态按主体切分；评估生成按音乐/编舞切分。",
+        "未下载或检验归档。"
+      ]
+    },
+    {
+      "id": "finedance",
+      "name": "FineDance",
+      "kind": "full_body_dance_dataset_and_generator",
+      "homepage": "https://github.com/li-ronghui/FineDance",
+      "relevance": "high_for_research",
+      "first_release_decision": "research_reference_only_exclude_assets",
+      "facts": {
+        "paper_total_hours": 14.6,
+        "repository_advertised_released_subset_hours": 7.7,
+        "paper_dance_genres": 22,
+        "motion_format": "SMPLH",
+        "contains": [
+          "fine-grained hand motion",
+          "genre labels",
+          "WAV music",
+          "music features"
+        ]
+      },
+      "suitable_for": [
+        "精细手部动作研究",
+        "细舞种条件生成研究",
+        "全身动作表示设计"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "data_model_software_video_music",
+          "license_label": "FineDance non-commercial scientific research license",
+          "commercial_use_status": "prohibited_without_separate_permission",
+          "redistribution_status": "prior_written_permission_required",
+          "evidence_source_ids": [
+            "fine_license"
+          ],
+          "notes": "明确禁止商业模型训练和默认分发。项目网页模板页脚 CC BY-SA 不替代 Data & Software 许可。"
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "fine_paper",
+          "quote": "14.6 hours of music-dance paired data"
+        },
+        {
+          "source_id": "fine_readme",
+          "quote": "The part(7.7 hours) of FineDance dataset can be downloaded"
+        },
+        {
+          "source_id": "fine_license",
+          "quote": "To use the Data & Software for the sole purpose of performing non-commercial scientific research, non-commercial education, or non-commercial artistic projects;"
+        },
+        {
+          "source_id": "fine_license",
+          "quote": "The Data & Software may not be reproduced, modified and/or made available in any form to any third party without Xiu Li’s prior written permission."
+        }
+      ],
+      "caveats": [
+        "论文规模与当前公开规模不同。",
+        "公开权重可下载不代表能在产品运行。",
+        "源音乐权利不能独立视为已清。"
+      ]
+    },
+    {
+      "id": "beat-beat2",
+      "name": "BEAT / BEAT2 (PantoMatrix / EMAGE)",
+      "kind": "co_speech_gesture_dataset",
+      "homepage": "https://pantomatrix.github.io/BEAT/",
+      "relevance": "low_for_dance_high_for_talking_avatar",
+      "first_release_decision": "defer_not_dance_core",
+      "facts": {
+        "beat_motion_hours": 76,
+        "beat_face_blendshape_dimensions": 52,
+        "beat_format": "BVH + ARKit",
+        "beat2_format": "SMPLX + FLAME",
+        "conditioning": "speech, text, semantics, emotion"
+      },
+      "suitable_for": [
+        "未来虚拟教练的伴随语音手势",
+        "脸手身体表达研究"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "beat_and_beat2_huggingface_dataset_cards",
+          "license_label": "Apache-2.0 metadata; scope unresolved",
+          "commercial_use_status": "unresolved",
+          "redistribution_status": "unresolved",
+          "evidence_source_ids": [
+            "beat_card",
+            "beat2_card",
+            "beat_project"
+          ],
+          "notes": "数据卡仅 license: apache-2.0；BEAT 项目页同时有 non-commercial 页脚，其范围不明，不能据此放行所有数据资产。"
+        },
+        {
+          "asset_scope": "pantomatrix_code",
+          "license_label": "No root LICENSE found in inspected tree",
+          "commercial_use_status": "unverified",
+          "redistribution_status": "unverified",
+          "evidence_source_ids": [
+            "beat_tree"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "pretrained_weights_smplx_flame_assets",
+          "license_label": "Independent licenses not verified",
+          "commercial_use_status": "unverified",
+          "redistribution_status": "unverified",
+          "evidence_source_ids": [
+            "beat_repo"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "beat_project",
+          "quote": "BEAT contains 76-hour 3D motion from the motion capture system"
+        },
+        {
+          "source_id": "beat_project",
+          "quote": "Licensed under the Non-commercial license."
+        },
+        {
+          "source_id": "beat_card",
+          "quote": "license: apache-2.0"
+        },
+        {
+          "source_id": "beat2_card",
+          "quote": "license: apache-2.0"
+        }
+      ],
+      "caveats": [
+        "beat gestures 是语音手势，不是街舞踩拍。",
+        "非街舞课程或音乐舞蹈主数据集。",
+        "不能将 SMPL-Body 许可自动套用 SMPLX/FLAME。"
+      ]
+    },
+    {
+      "id": "amass",
+      "name": "AMASS",
+      "kind": "general_human_motion_dataset",
+      "homepage": "https://amass.is.tue.mpg.de/",
+      "relevance": "medium_for_motion_research",
+      "first_release_decision": "exclude_commercial_training_and_distribution",
+      "suitable_for": [
+        "通用人体运动先验",
+        "动作编码与重建研究"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "dataset",
+          "license_label": "AMASS non-commercial scientific research license",
+          "commercial_use_status": "prohibited_without_separate_permission",
+          "redistribution_status": "prior_written_permission_required",
+          "evidence_source_ids": [
+            "amass_license"
+          ],
+          "notes": "明确禁止商业训练；商业许可可联系官方页面 ps-license@tue.mpg.de，未发送消息。"
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "amass_license",
+          "quote": "This license also prohibits the use of the Dataset to train methods/algorithms/neural networks/etc. for commercial use of any kind."
+        },
+        {
+          "source_id": "amass_license",
+          "quote": "The Dataset may not be reproduced, modified and/or made available in any form to any third party without Max-Planck’s prior written permission."
+        }
+      ],
+      "caveats": [
+        "不是街舞教学数据库。",
+        "衍生处理不能消除原始数据许可。"
+      ]
+    },
+    {
+      "id": "humanml3d",
+      "name": "HumanML3D",
+      "kind": "motion_language_dataset_and_processing_code",
+      "homepage": "https://github.com/EricGuo5513/HumanML3D",
+      "relevance": "medium",
+      "first_release_decision": "borrow_schema_research_not_source_motion_assets",
+      "facts": {
+        "motions": 14616,
+        "descriptions": 44970,
+        "hours": 28.59,
+        "mean_motion_seconds": 7.1,
+        "sources": [
+          "AMASS",
+          "HumanAct12"
+        ]
+      },
+      "suitable_for": [
+        "文字动作检索研究",
+        "动作语义字段设计"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "repository_software",
+          "license_label": "MIT",
+          "commercial_use_status": "permitted_with_conditions",
+          "redistribution_status": "permitted_with_conditions",
+          "evidence_source_ids": [
+            "humanml_code_license"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "amass_derived_motion",
+          "license_label": "Underlying AMASS license",
+          "commercial_use_status": "prohibited_without_separate_permission",
+          "redistribution_status": "prior_written_permission_required",
+          "evidence_source_ids": [
+            "humanml_readme",
+            "amass_license"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "other_source_motion_and_text_annotations",
+          "license_label": "Independent scope not fully verified",
+          "commercial_use_status": "unverified",
+          "redistribution_status": "unverified",
+          "evidence_source_ids": [
+            "humanml_readme"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "humanml_readme",
+          "quote": "Due to the distribution policy of AMASS dataset, we are not allowed to distribute the data directly."
+        }
+      ],
+      "caveats": [
+        "代码 MIT 不自动覆盖源动作。",
+        "通用 text-to-motion 输出没有教练正确性或训练强度保证。"
+      ]
+    },
+    {
+      "id": "edge",
+      "name": "EDGE: Editable Dance Generation from Music",
+      "kind": "research_dance_generation_software_and_weights",
+      "homepage": "https://edge-dance.github.io/",
+      "relevance": "high_for_later_generation_research",
+      "first_release_decision": "defer_experimental_backend",
+      "facts": {
+        "method": "Transformer diffusion conditioned by Jukebox",
+        "clip_seconds": 5,
+        "supports": [
+          "joint-wise conditioning",
+          "in-betweening",
+          "dance continuation"
+        ],
+        "recommended_platform": "Linux",
+        "reference_pytorch": "1.12.1",
+        "reference_cuda": "11.6",
+        "minimum_recommended_gpu_memory_gb": 16,
+        "reference_training_dataset": "AIST++ WAV and motion"
+      },
+      "suitable_for": [
+        "组合衔接研究",
+        "音乐条件动作生成研究",
+        "可编辑动作生成"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "repository_software",
+          "license_label": "MIT",
+          "commercial_use_status": "permitted_with_conditions",
+          "redistribution_status": "permitted_with_conditions",
+          "evidence_source_ids": [
+            "edge_code_license"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "externally_linked_pretrained_checkpoint",
+          "license_label": "No separate explicit weight license verified",
+          "commercial_use_status": "unverified",
+          "redistribution_status": "unverified",
+          "evidence_source_ids": [
+            "edge_readme"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "training_video_music",
+          "license_label": "AIST Terms of Use",
+          "commercial_use_status": "prior_written_permission_required",
+          "redistribution_status": "unauthorized_redistribution_prohibited",
+          "evidence_source_ids": [
+            "aist_terms",
+            "edge_readme"
+          ],
+          "notes": ""
+        },
+        {
+          "asset_scope": "training_annotations",
+          "license_label": "CC-BY-4.0",
+          "commercial_use_status": "permitted_with_conditions",
+          "redistribution_status": "permitted_with_conditions",
+          "evidence_source_ids": [
+            "aistpp_facts"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "edge_code_license",
+          "quote": "MIT License"
+        },
+        {
+          "source_id": "edge_readme",
+          "quote": "Download and process the AIST++ dataset (wavs and motion only)"
+        },
+        {
+          "source_id": "edge_readme",
+          "quote": "This is a research implementation and, in general, will not be regularly updated or maintained long after release."
+        }
+      ],
+      "caveats": [
+        "无本次验证的 Core ML/Swift/Apple Silicon 移植。",
+        "研究中的 physically-plausible 不等于初学者可安全执行或教学正确。",
+        "产品可先采用已审核动作的规则组合器。"
+      ]
+    },
+    {
+      "id": "smpl",
+      "name": "SMPL-Model / SMPL-Body",
+      "kind": "parametric_body_model_and_body_asset_subset",
+      "homepage": "https://smpl.is.tue.mpg.de/",
+      "relevance": "high_for_license_boundary",
+      "first_release_decision": "use_original_skeleton_review_any_mesh_separately",
+      "suitable_for": [
+        "骨架/人体网格可视化",
+        "动作表示互操作"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "full_smpl_model_software_and_data",
+          "license_label": "SMPL-Model non-commercial research license",
+          "commercial_use_status": "separate_commercial_license_required",
+          "redistribution_status": "prior_written_permission_required",
+          "evidence_source_ids": [
+            "smpl_model_license"
+          ],
+          "notes": "禁止默认商业训练。"
+        },
+        {
+          "asset_scope": "qualifying_smpl_body_subset",
+          "license_label": "CC-BY-4.0",
+          "commercial_use_status": "permitted_with_conditions",
+          "redistribution_status": "permitted_with_conditions",
+          "evidence_source_ids": [
+            "smpl_body_license",
+            "ccby4"
+          ],
+          "notes": "Body excludes shape blendshapes and tools to create bodies using those shape blendshapes；具体资产来源仍须记录。"
+        },
+        {
+          "asset_scope": "smplh_smplx_flame_other_models",
+          "license_label": "Not covered by automatic inference from SMPL-Body",
+          "commercial_use_status": "unverified",
+          "redistribution_status": "unverified",
+          "evidence_source_ids": [],
+          "notes": ""
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "smpl_body_license",
+          "quote": "SMPL-Body is a subset of SMPL-Model which excludes the shape blendshapes or the tools to create 3D bodies using the shape blendshapes of the SMPL-Model."
+        },
+        {
+          "source_id": "smpl_body_license",
+          "quote": "SMPL-Body is licensed under the Creative Commons Attribution 4.0 International License."
+        }
+      ],
+      "caveats": [
+        "不得将 Body 可商用推论为完整 Model 可商用。",
+        "没有取得或分发任何 SMPL 模型文件。"
+      ]
+    },
+    {
+      "id": "steezy",
+      "name": "STEEZY",
+      "kind": "commercial_dance_learning_service",
+      "homepage": "https://www.steezy.co/",
+      "relevance": "high_for_training_interface_reference",
+      "first_release_decision": "official_external_links_and_original_description_only",
+      "facts": {
+        "advertised_classes_at_check": "1500+",
+        "features": [
+          "front/back view",
+          "loop moves",
+          "mirror video",
+          "speed control",
+          "section markers",
+          "camera mode"
+        ]
+      },
+      "suitable_for": [
+        "训练界面交互参考",
+        "课程合作候选",
+        "用户自行访问的教学外链"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "course_video_music_text_and_service_content",
+          "license_label": "STEEZY Terms of Use",
+          "commercial_use_status": "prior_written_permission_required",
+          "redistribution_status": "prior_written_permission_required",
+          "evidence_source_ids": [
+            "steezy_terms"
+          ],
+          "notes": "个人非商业用途；禁止抓取、复制/存储显著内容。"
+        }
+      ],
+      "evidence": [
+        {
+          "source_id": "steezy_terms",
+          "quote": "You will only use the Services for your own internal, personal, non-commercial use"
+        },
+        {
+          "source_id": "steezy_terms",
+          "quote": "Use, reproduction, modification, distribution or storage of any Content for any purpose other than using the Services is expressly prohibited without prior written permission from us."
+        }
+      ],
+      "caveats": [
+        "未下载课程或抽取动作。",
+        "公开首页功能作为产品研究，不复制受保护教学内容。"
+      ]
+    },
+    {
+      "id": "redbull-dance",
+      "name": "Red Bull Dance",
+      "kind": "candidate_educational_external_link",
+      "homepage": "https://www.redbull.com/int-en/tags/dance",
+      "relevance": "candidate_unverified",
+      "first_release_decision": "manual_link_validation_required",
+      "suitable_for": [
+        "舞种文化与教学外链候选"
+      ],
+      "licenses": [
+        {
+          "asset_scope": "website_video_music_text",
+          "license_label": "Not verified due to HTTP 403",
+          "commercial_use_status": "unverified",
+          "redistribution_status": "unverified",
+          "evidence_source_ids": [
+            "redbull_dance_candidate",
+            "redbull_tutorial_candidate"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": [],
+      "caveats": [
+        "本次正常请求返回 HTTP 403，未绕过限制。",
+        "尚未确认候选具体页面存在或允许嵌入。",
+        "不得把本条当作可抓取数据库或已获授权素材。"
+      ]
+    }
+  ],
+  "first_release_recommendations": [
+    "原创动作卡与教练授权或用户自录示范",
+    "本地关节轨迹，保存全部捕获帧和时间戳",
+    "原创节拍器/节拍音频及用户本地文件播放",
+    "AIST++ 标注可选适配器，单独署名与许可记录",
+    "STEEZY 等教学资源仅使用原创摘要和官方外链",
+    "已审核动作的规则编排，生成模型后续独立实验"
+  ],
+  "asset_provenance_fields": [
+    "assetID",
+    "sourceURL",
+    "retrievedAt",
+    "author",
+    "attribution",
+    "licenseURL",
+    "assetScope",
+    "commercialUseStatus",
+    "redistributionStatus",
+    "permissionEvidence",
+    "localFileHash"
+  ]
+}
