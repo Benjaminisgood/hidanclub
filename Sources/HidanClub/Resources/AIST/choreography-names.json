@@ -1,0 +1,506 @@
+{
+  "sourceURL": "https://aistdancedb.ongaaccel.jp/data/choreo.xlsx",
+  "accessedAt": "2026-09-09",
+  "entries": [
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch01",
+      "sourceName": "indian step"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch02",
+      "sourceName": "twist"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch03",
+      "sourceName": "two step"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch04",
+      "sourceName": "roll two step"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch05",
+      "sourceName": "up rock"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch06",
+      "sourceName": "battle rock"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch07",
+      "sourceName": "6 step"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch08",
+      "sourceName": "3 step"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch09",
+      "sourceName": "cc"
+    },
+    {
+      "genreCode": "gBR",
+      "choreographyCode": "ch10",
+      "sourceName": "back cc"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch01",
+      "sourceName": "fresno"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch02",
+      "sourceName": "walk out"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch03",
+      "sourceName": "loft"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch04",
+      "sourceName": "hand wave"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch05",
+      "sourceName": "body wave"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch06",
+      "sourceName": "neck-o-flex"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch07",
+      "sourceName": "flex"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch08",
+      "sourceName": "walk"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch09",
+      "sourceName": "old man"
+    },
+    {
+      "genreCode": "gPO",
+      "choreographyCode": "ch10",
+      "sourceName": "roll"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch01",
+      "sourceName": "lock"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch02",
+      "sourceName": "twirl"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch03",
+      "sourceName": "point"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch04",
+      "sourceName": "crap"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch05",
+      "sourceName": "pacing"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch06",
+      "sourceName": "stop and go"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch07",
+      "sourceName": "rock steady"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch08",
+      "sourceName": "skeeter rabbit"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch09",
+      "sourceName": "scooby doo"
+    },
+    {
+      "genreCode": "gLO",
+      "choreographyCode": "ch10",
+      "sourceName": "cross hand"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch01",
+      "sourceName": "roger rabbit"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch02",
+      "sourceName": "rock the board"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch03",
+      "sourceName": "charleston"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch04",
+      "sourceName": "club"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch05",
+      "sourceName": "brooklyn"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch06",
+      "sourceName": "slide"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch07",
+      "sourceName": "box"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch08",
+      "sourceName": "broolklyn bounce"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch09",
+      "sourceName": "running man"
+    },
+    {
+      "genreCode": "gMH",
+      "choreographyCode": "ch10",
+      "sourceName": "popcorn"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch01",
+      "sourceName": "slide"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch02",
+      "sourceName": "paddbre"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch03",
+      "sourceName": "ball change"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch04",
+      "sourceName": "shamrock"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch05",
+      "sourceName": "babysitter"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch06",
+      "sourceName": "break down"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch07",
+      "sourceName": "roger rabbit"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch08",
+      "sourceName": "club"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch09",
+      "sourceName": "box"
+    },
+    {
+      "genreCode": "gLH",
+      "choreographyCode": "ch10",
+      "sourceName": "walk"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch01",
+      "sourceName": "loose legs"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch02",
+      "sourceName": "paddbre"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch03",
+      "sourceName": "side kick"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch04",
+      "sourceName": "swirl"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch05",
+      "sourceName": "train"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch06",
+      "sourceName": "farmer"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch07",
+      "sourceName": "chase"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch08",
+      "sourceName": "shuffle"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch09",
+      "sourceName": "heel step"
+    },
+    {
+      "genreCode": "gHO",
+      "choreographyCode": "ch10",
+      "sourceName": "back skip"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch01",
+      "sourceName": "twirl"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch02",
+      "sourceName": "open"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch03",
+      "sourceName": "pose"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch04",
+      "sourceName": "walk"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch05",
+      "sourceName": "shake"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch06",
+      "sourceName": "four corner"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch07",
+      "sourceName": "swap"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch08",
+      "sourceName": "punk"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch09",
+      "sourceName": "grab"
+    },
+    {
+      "genreCode": "gWA",
+      "choreographyCode": "ch10",
+      "sourceName": "turn"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch01",
+      "sourceName": "stomp"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch02",
+      "sourceName": "chest pops"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch03",
+      "sourceName": "arm swing"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch04",
+      "sourceName": "jabs"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch05",
+      "sourceName": "bang outs"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch06",
+      "sourceName": "kick back"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch07",
+      "sourceName": "buck hop"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch08",
+      "sourceName": "whip"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch09",
+      "sourceName": "Tick"
+    },
+    {
+      "genreCode": "gKR",
+      "choreographyCode": "ch10",
+      "sourceName": "focus"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch01",
+      "sourceName": "positions des bras"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch02",
+      "sourceName": "positions des pieds"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch03",
+      "sourceName": "plie"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch04",
+      "sourceName": "jump"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch05",
+      "sourceName": "tendu"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch06",
+      "sourceName": "chaines"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch07",
+      "sourceName": "passe balance"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch08",
+      "sourceName": "paddbre"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch09",
+      "sourceName": "chasse"
+    },
+    {
+      "genreCode": "gJS",
+      "choreographyCode": "ch10",
+      "sourceName": "contraction"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch01",
+      "sourceName": "chaines"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch02",
+      "sourceName": "pique"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch03",
+      "sourceName": "Fouette"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch04",
+      "sourceName": "paddbre"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch05",
+      "sourceName": "pas de chat"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch06",
+      "sourceName": "grand pas de chat"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch07",
+      "sourceName": "grand jete"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch08",
+      "sourceName": "passe"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch09",
+      "sourceName": "entrelace"
+    },
+    {
+      "genreCode": "gJB",
+      "choreographyCode": "ch10",
+      "sourceName": "airplane"
+    }
+  ]
+}

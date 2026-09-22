@@ -1,19 +1,19 @@
 # 街舞学习应用：可用资源与授权核查
 
-核查日期：2026-09-09。范围为 10 个高价值资源组，读取官方项目页、作者仓库、许可文件及论文摘要；未下载视频、音乐、模型权重或大型数据集。结构化索引见同目录 `dance-resources.json`。下文的“可以”均限定在明确列出的资产与许可范围，未把仓库开源许可扩展到训练数据、音乐或第三方人体模型。
+核查日期：2026-09-09。范围为 10 个高价值资源组，读取官方项目页、作者仓库、许可文件及论文摘要。本轮已下载完整 AIST++ 3D 标注与相机、划分、质量清单，完成源归档与全坐标无损校验；未下载原视频、音乐或模型权重。结构化索引见同目录 `dance-resources.json`。下文的“可以”均限定在明确列出的资产与许可范围，未把仓库开源许可扩展到训练数据、音乐或第三方人体模型。
 
 ## 第一版选择
 
-第一版应使用**原创动作说明、已取得授权的教练示范/用户自录视频、本地关节轨迹与原创节拍音频**，建立可审核的动作库。第三方课程作为外链目录；识别先做指定动作跟练中的节奏、姿态与完成度反馈，生成先做已审核动作的组合编排。
+当前使用**原创动作说明、AIST++ 全帧 3D 参考、本地关节轨迹与原创节拍音频**，建立可追查来源的动作库。教练授权/用户自录视频可继续补充真实示范；第三方课程保留外链。识别研究需先验证指定动作中的时序与姿态比较，不能把已有舞种标签或骨架观测当成经过验证的教学评分。
 
-AIST++ 是最值得接入的研究资源：**Google 的标注为 CC BY 4.0，API 代码为 Apache-2.0；AIST 原视频和音乐另受仅限学术研究的条款约束。** 优先评估其 COCO 17 点标注与舞种/编舞结构，保留署名和来源；不将原视频、音乐或 SMPL 模型文件自动打包。
+AIST++ 已成为本地动作参考库：**1,408 条三维序列、1,123,873 个独立时间帧、10 舞种，原始与官方优化两层均完整保留为 Float64。** Google 标注为 CC BY 4.0；API 根许可为 Apache-2.0，部分移植的特征代码有 BSD 声明；原 AIST 视频和音乐遵循独立研究用途条款。此前停留在“可选适配器”而未下载标注过于保守，原媒体限制不妨碍直接使用这份标注。
 
 FineDance、AMASS 及 HumanML3D 的 AMASS 衍生动作层不适合作为默认商业素材库。EDGE 可以研究实现思路，但公开的 MIT 代码不能单独证明预训练权重和音乐全部可商用。BEAT/BEAT2 的任务是伴随语音的手势，与街舞教学的目标不同。
 
 | 资源 | 核心用途 | 已核实的许可边界 | 第一版决定 |
 | --- | --- | --- | --- |
 | AIST Dance DB | 多舞种、多机位真实街舞视频/音乐 | 学术研究；商业须事先书面同意；禁止未授权分发 | 外链/申请授权，不内置素材 |
-| AIST++ | 2D/3D 姿态、舞蹈与音乐关系研究 | 标注 CC BY 4.0；API Apache-2.0；原媒体许可独立 | 可选标注适配器，保留来源/署名 |
+| AIST++ | 2D/3D 姿态、舞蹈与音乐关系研究 | 标注 CC BY 4.0；代码按文件许可；原媒体许可独立 | 完整 3D 标注已下载并校验，接入全帧动作参考库 |
 | FineDance | 手指精细动作、舞种条件生成 | data/model/software 非商业；商业训练和第三方分发受限 | 研究参考，排除发行包 |
 | BEAT / BEAT2 | co-speech gesture、身体/脸/手表达 | HF 卡为 Apache-2.0；旧项目页为 non-commercial，范围待澄清；SMPLX 等独立 | 不作为街舞核心数据 |
 | AMASS | 通用人体运动与动作先验 | 非商业；明确禁止商业训练；不可直接第三方分发 | 不作为默认商用数据 |
@@ -32,17 +32,21 @@ FineDance、AMASS 及 HumanML3D 的 AMASS 衍生动作层不适合作为默认�
   > “Unauthorized redistribution of any content of the database is prohibited.”
 - 使用前需填写 Application Form；商业或非研究用途应联系页面给出的 `aistdancedb-ml@aist.go.jp`。本次没有提交表单或发送邮件。
 - 适用：舞种分类、跨机位姿态验证、音乐动作对齐研究。限制：其标签以舞种/场景为主，不能直接等同于面向初学者的“Running Man 第 3 拍错在哪里”教学标签，也没有证明某位舞者的表达是唯一正确标准。
+- [原下载页](https://aistdancedb.ongaaccel.jp/database_download/) 提供单视频永久链接及批量 URL/metadata 清单，并允许分享永久 URL。对应静态图像需要由原视频解码；没有与 `keypoints3d.zip` 一并打包的图像。原视频/音乐本轮未下载，访问路径和许可流程保留，详见 [图像与计数核查](aist-images-and-counts.md)。
+- 官方 [choreo.xlsx](https://aistdancedb.ongaaccel.jp/data/choreo.xlsx) 的 100 个基础动作短名已整理为应用检索元数据，保留原文和来源，仅按 `sBM + genre + choreography` 匹配。它们来自原 AIST 元数据，不宣称由 Google CC BY 标注或本应用 AI 生成。
 
 ## 2. AIST++
 
-- [官方说明与标注许可](https://google.github.io/aistplusplus_dataset/factsfigures.html)、[下载/格式](https://google.github.io/aistplusplus_dataset/download.html)、[API 仓库](https://github.com/google/aistplusplus_api)。1,408 段舞蹈、10 个舞种、30 名主体、9 机位、约 1,010 万帧图像的关节点标注；动作长度 7.4–48.0 秒。
+- [官方说明与标注许可](https://google.github.io/aistplusplus_dataset/factsfigures.html)、[下载/格式](https://google.github.io/aistplusplus_dataset/download.html)、[API 仓库](https://github.com/google/aistplusplus_api)。官网列出 1,408 段舞蹈、10 个舞种、30 名主体、9 机位和 **10,108,015 个多机位图像**的关节点标注；动作长度 7.4–48.0 秒。本机逐文件累加为 **1,123,873 个独立三维时间帧**，不能将图像数或原始/优化两个版本重复算成更多动作帧。
 - 直接许可证据：
   > “The annotations are licensed by Google LLC under CC BY 4.0 license.”
 - [CC BY 4.0 官方摘要](https://creativecommons.org/licenses/by/4.0/) 明确允许为商业目的分享和改编，要求署名、许可链接、标示修改，且不能添加限制他人行使许可权利的措施。其提示其他权利仍可能适用。**标注的许可不自动覆盖真人肖像、源音乐或人体模型工具。**
-- [API LICENSE](https://raw.githubusercontent.com/google/aistplusplus_api/main/LICENSE) 为 Apache License 2.0。代码和标注是不同许可对象。
+- [API LICENSE](https://raw.githubusercontent.com/google/aistplusplus_api/main/LICENSE) 为 Apache License 2.0；移植自 fairmotion 的 `features/kinetic.py`、`manual.py` 等另有 BSD 声明。代码和标注是不同许可对象。
 - 格式：`keypoints2d` 为 `(9, N, 17, 3)`，末维 `x,y,confidence`；`keypoints3d` 为 `(N,17,3)`；`smpl_poses` 为 `(N,24,3)`，另有 root translation。标注严格 60 FPS；原视频 FPS 可能略有不同。数据页提供不良重建 `ignore_list.txt`，应记录排除原因，不能让低质量数据进入评分标准。
-- 学习价值：先把 COCO 17 点映射到应用的 canonical skeleton，再按身体比例/朝向做归一化与时间对齐；无需为了显示骨架引入 SMPL 的形体生成模型。评价姿态要按舞者切分；评价生成要避免音乐/编舞跨训练测试集泄漏，官方给出了这两类 split。
-- 下载能力已验证为页面列出：motion 306 MB、2D 1.2 GB、3D 834 MB、camera 19 KB；**未实际下载或验证归档内容**。
+- 学习价值：COCO 17 点直接支撑骨架显示，无需引入 SMPL 形体模型。显示旋转/平移/缩放与原坐标分开；官方源码支持 Y-up，但不宜把未确认物理单位的源坐标标成实测米/厘米。评价姿态要按舞者切分；评价生成要避免音乐/编舞跨训练测试集泄漏，官方给出了这两类 split。
+- 已下载官方 `keypoints3d.zip`（876,142,511 字节）及 cameras、splits、ignore list。原始与官方优化两层合计 917,080,368 字节，45 条官方低质量序列及原始 NaN 坐标全部保留。SHA-256、归档 CRC 与全部坐标逐字节校验通过，数据存于应用支持目录，未塞入 Git 或 `.app`。具体证据见 [AIST++ 接入与验收](../AIST_DATASET.md)。2D 和 SMPL motion 归档未在本轮下载。
+- 本轮应用接入围绕检索/收藏、逐帧查看、A–B/八拍区间、连续片段导出及训练计划导入展开。数据验收与 UI 验收分别记录；界面构建和实际操作结果见 [VERIFICATION.md](../VERIFICATION.md)，不由数据校验代替。
+- 官方从视频构造标注图像时使用 exact 60 FPS，API 的 FFmpeg `fps` filter 会重采样。后续媒体接入应保存原视频全部帧/PTS，并以独立 60 Hz 标注时间轴建立映射，不自动抽帧、插值或转码凑齐帧数。官方旧视频列表 URL 本轮返回 HTTP 403，单视频永久 URL 仍可访问；详见 [图像与计数核查](aist-images-and-counts.md)。
 
 ## 3. FineDance
 

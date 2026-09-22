@@ -20,6 +20,15 @@ xcuserdata/
 *.tmp
 *.temp
 
+# Python dataset preparation caches and local environments.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
 # macOS and editor-local state.
 .DS_Store
 ._*

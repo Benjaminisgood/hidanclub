@@ -1,177 +1,384 @@
 import SwiftUI
 import HidanCore
 
+enum TrainingDisplayMode: String, CaseIterable, Identifiable {
+    case sideBySide = "并排", demonstration = "只看示范", camera = "只看摄像头", overlay = "叠加"
+    var id: String { rawValue }
+}
+enum TrainingSource: String { case none, aist, captured, generated }
+
 struct TrainingView: View {
     @ObservedObject var store: TrainingStore
     @ObservedObject var music: MusicService
-    @State private var selectedMove: DanceMove?
+    @ObservedObject var demonstration: TrainingDemonstrationStore
+    @ObservedObject var camera: LivePoseCamera
+    @ObservedObject var captured: CapturedMotionStore
+    var practice: PracticeMotionStore
+    @Binding var source: TrainingSource
+    var onBack: () -> Void
+    @AppStorage("training.displayMode") private var displayMode: TrainingDisplayMode = .sideBySide
+    @AppStorage("training.cameraOnByDefault") private var cameraOnByDefault = false
+    @AppStorage("aist.skeletonOverlay") private var skeletonOverlay = false
+    @AppStorage("aist.showReferenceGrid") private var showReferenceGrid = false
+    @AppStorage("aist.showJointNames") private var showJointNames = false
+    @State private var overlayOpacity = 0.65
+    @State private var overlayScale = 1.0
+    @State private var overlayOffset = CGSize.zero
+    @State private var dragStart = CGSize.zero
+    @State private var showPlan = false
+    @AppStorage("aist.visualStyle") private var visualStyle: AISTVisualStyle = .porcelain
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 16) {
                 header
-                hero
-                HStack(alignment: .top, spacing: 22) {
-                    planList.frame(maxWidth: .infinity)
-                    VStack(spacing: 20) { focusCard; rhythmCard }.frame(width: 285)
+                selectedPractice
+                trainingSurface
+                if displayMode == .overlay {
+                    HStack {
+                        Text("示范透明度").font(.caption)
+                        Slider(value: $overlayOpacity, in: 0.15...1).frame(width: 100)
+                        Text("大小").font(.caption)
+                        Slider(value: $overlayScale, in: 0.5...1.8).frame(width: 100)
+                        Button("重置位置") { overlayScale = 1; overlayOffset = .zero; dragStart = .zero }
+                        Text("拖动示范调整位置 · 手动视觉对照，尚未自动对齐").font(.caption2).foregroundStyle(.secondary)
+                    }
                 }
-                Text("先整理出不会滑倒、能自由伸展的空间。保持舒适呼吸；不适时暂停。练习时长与 BPM 是可调整起点，基础动作提示尚未经教练审核。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }.padding(32)
-        }.sheet(item: $selectedMove) { MoveDetailSheet(move: $0) }
+                if source == .aist { sessionControls }
+                else if source == .generated { GeneratedSessionControls(training: store, practice: practice) }
+                else if source == .captured { capturedControls }
+                else { freePracticeControls }
+                if displayMode != .demonstration { LivePoseCameraControls(camera: camera) }
+                if source == .aist || source == .generated {
+                    if source == .aist, let issue = demonstration.issue ?? store.demonstrationError {
+                        HStack {
+                            Label(issue, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
+                            Spacer()
+                            Button("重新载入") { demonstration.reload() }
+                        }
+                    }
+                    DisclosureGroup("训练计划 · \(store.plan.blocks.count) 段 · \(clockText(Double(store.plan.totalSeconds)))", isExpanded: $showPlan) {
+                        planList.padding(.top, 12)
+                    }.font(.callout.weight(.medium))
+                }
+                Text("腾出能自由伸展的空间。相机检测在本机完成；二维关节、角度与入镜提示用于观察，不代表舞蹈质量评分。音乐尚未与示范动作自动对拍。")
+                    .font(.caption2).foregroundStyle(.secondary)
+            }.padding(22)
+        }
+        .onAppear {
+            guard cameraOnByDefault, displayMode != .demonstration, !camera.isRunning, !camera.isBusy else { return }
+            camera.start()
+        }
+        .onDisappear {
+            demonstration.pause(); captured.pause(); practice.pause(); camera.stop(); music.pause()
+        }
     }
-
     private var header: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 9) {
-                Eyebrow(text: "HIDAN CLUB / 每天，跳一点")
-                Text("把今天，交给节奏。").font(.system(size: 31, weight: .bold))
-                Text("从一个舒服的律动开始，给自己一点练习的空间。").foregroundStyle(.secondary)
+        HStack {
+            Button("返回", systemImage: "chevron.left", action: onBack)
+            VStack(alignment: .leading, spacing: 5) {
+                Eyebrow(text: source == .none ? "RECORD / 看着自己" : "PRACTICE / 跟练")
+                Text(source == .none ? "看着自己，录下这一段。" : "看见动作，也看见自己。").font(.system(size: 25, weight: .bold))
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(Date(), format: .dateTime.month(.wide).day()).font(.callout.weight(.medium))
-                Text("YOUR DAILY PRACTICE").font(.system(size: 9, design: .monospaced)).tracking(1).foregroundStyle(.secondary)
+        }
+    }
+    private var selectedPractice: some View {
+        HStack {
+            if source == .aist {
+                Label(store.plan.title, systemImage: "figure.dance").font(.callout.weight(.medium))
+            } else if source == .captured {
+                Label(captured.selected?.name ?? "视频动作编排", systemImage: "square.stack.3d.up").font(.callout.weight(.medium))
+                Text("视频库 · 2D 动作模型").font(.caption).foregroundStyle(.secondary)
+            } else if source == .generated {
+                Label(practice.title.isEmpty ? "基础练习" : practice.title, systemImage: "figure.walk").font(.callout.weight(.medium))
+            } else {
+                Label("自由观察 · 实时摄像头", systemImage: "web.camera").font(.callout.weight(.medium))
+                Text("跟练请从动作、编排或视频进入").font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+    }
+    private var freePracticeControls: some View {
+        HStack {
+            Text("打开摄像头，观察自己的关节，或录下这一段。跟练请从动作、编排或视频进入。").font(.callout).foregroundStyle(.secondary)
+            Spacer()
+            if !camera.isRunning && !camera.isBusy {
+                Button("开启摄像头") {
+                    if displayMode == .demonstration { displayMode = .camera }
+                    camera.start()
+                }.buttonStyle(.borderedProminent)
+            }
+        }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+    private var trainingSurface: some View {
+        Group {
+            switch displayMode {
+            case .sideBySide:
+                HStack(spacing: 12) {
+                    stagePanel.frame(maxWidth: .infinity)
+                    cameraPanel.frame(maxWidth: .infinity)
+                }
+            case .demonstration: stagePanel
+            case .camera: cameraPanel
+            case .overlay:
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Label("摄像头 + 动作示范", systemImage: "square.3.layers.3d")
+                        Spacer()
+                        Text("示范半透明 · 自身关节高亮").foregroundStyle(.secondary)
+                    }.font(.caption)
+                    ZStack {
+                        LivePoseCameraSurface(camera: camera)
+                        if camera.isRunning && source != .none {
+                            demonstrationSurface(transparent: true)
+                                .opacity(overlayOpacity).scaleEffect(overlayScale).offset(overlayOffset)
+                                .allowsHitTesting(false)
+                            Color.clear.contentShape(Rectangle()).gesture(
+                                DragGesture().onChanged { value in
+                                    overlayOffset = CGSize(width: dragStart.width + value.translation.width, height: dragStart.height + value.translation.height)
+                                }.onEnded { _ in dragStart = overlayOffset }
+                            )
+                        }
+                    }.frame(height: 310).clipped().clipShape(RoundedRectangle(cornerRadius: 16))
+                }
             }
         }
     }
-
-    private var hero: some View {
-        ZStack(alignment: .trailing) {
-            RoundedRectangle(cornerRadius: 26).fill(ClubTheme.accent.gradient)
-            GrooveArtwork().frame(width: 300, height: 250).padding(.trailing, 25).opacity(0.9).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 15) {
-                Text(store.active ? "IN THE GROOVE" : "TODAY’S SESSION").font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(2).opacity(0.75)
-                Text(heroTitle).font(.system(size: 29, weight: .bold)).frame(maxWidth: 430, alignment: .leading)
-                if store.active {
-                    Text(clockText(store.snapshot.remainingSeconds)).font(.system(size: 55, weight: .light, design: .rounded)).monospacedDigit()
-                    Text(store.clock.state == .paused ? "已暂停 · 按自己的节奏继续" : (store.snapshot.currentBlock?.cue ?? "")).font(.callout).frame(maxWidth: 420, alignment: .leading)
-                } else {
-                    Text("\(store.minutes) 分钟 · \(store.style.displayName) · \(store.level == 1 ? "入门" : "基础进阶")").opacity(0.8)
-                    Text("热身  /  分解  /  组合  /  放松").font(.callout).opacity(0.8)
-                }
-                HStack(spacing: 12) {
-                    Button(action: primaryAction) {
-                        Label(primaryTitle, systemImage: store.clock.state == .running ? "pause.fill" : "play.fill")
-                            .font(.system(size: 13, weight: .semibold)).padding(.horizontal, 17).padding(.vertical, 9)
-                    }.buttonStyle(.plain).background(ClubTheme.lime, in: Capsule()).foregroundStyle(Color.black.opacity(0.85))
-                    if store.active {
-                        Button("下一段") { store.advance(); if !store.active { music.stop() } }.buttonStyle(.plain).padding(.horizontal, 8)
-                        Button("结束") { store.stop(); music.stop() }.buttonStyle(.plain).opacity(0.8)
-                    }
-                }.padding(.top, 4)
-            }.foregroundStyle(.white).padding(30).frame(maxWidth: .infinity, alignment: .leading)
-        }.frame(minHeight: 270)
-    }
-    private var heroTitle: String {
-        if store.active { return store.snapshot.currentBlock?.title ?? "练习" }
-        if store.clock.state == .completed { return "今天的练习，完成了。" }
-        if store.clock.state == .stopped { return "每一点练习，都算数。" }
-        return "找到你的基础律动"
-    }
-    private var primaryTitle: String {
-        switch store.clock.state {
-        case .running: return "暂停练习"
-        case .paused: return "继续练习"
-        case .completed, .stopped: return "再练一次"
-        case .idle: return "开始练习"
+    private var stagePanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(source == .aist ? (demonstration.reference?.name ?? "动作示范") : source == .captured ? (captured.selected?.name ?? "动作编排") : "动作示范", systemImage: "figure.dance")
+                    .font(.callout.weight(.semibold)).lineLimit(1)
+                Spacer(minLength: 0)
+                if source == .aist { Text(demonstration.stageLabel).font(.caption2).foregroundStyle(.secondary) }
+            }
+            demonstrationSurface(transparent: false).frame(height: 310).clipShape(RoundedRectangle(cornerRadius: 16))
         }
+    }
+    private var cameraPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("我的实时画面", systemImage: "web.camera").font(.callout.weight(.semibold))
+                Spacer()
+                Text("本机捕捉").font(.caption2).foregroundStyle(.secondary)
+            }
+            LivePoseCameraSurface(camera: camera).frame(height: 310).clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+    }
+    @ViewBuilder private func demonstrationSurface(transparent: Bool) -> some View {
+        if source == .generated {
+            PracticeMotionStage(player: practice, visualStyle: visualStyle, showJointNames: showJointNames,
+                                showSkeletonOverlay: skeletonOverlay, showReferenceGrid: showReferenceGrid, transparent: transparent)
+        } else if source == .aist {
+            TrainingAISTStage(player: demonstration.player, visualStyle: visualStyle, showJointNames: showJointNames,
+                              showSkeletonOverlay: skeletonOverlay, showReferenceGrid: showReferenceGrid, transparent: transparent)
+        } else if source == .captured {
+            CapturedMotionPlayerView(playback: captured.playback, transparentBackground: transparent)
+        } else {
+            ContentUnavailableView {
+                Label("还没有动作示范", systemImage: "figure.dance")
+            } description: { Text("从动作库选好内容后再开始跟练。这里也可以只用摄像头观察。") }
+        }
+    }
+    private var sessionControls: some View {
+        HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 12) {
+                    Text(store.active ? (store.snapshot.currentBlock?.title ?? "练习") : (store.clock.state == .completed ? "本次练习已完成" : "准备跟练"))
+                        .font(.title3.weight(.semibold))
+                    Text(clockText(store.snapshot.remainingSeconds)).font(.system(size: 28, weight: .medium, design: .rounded)).monospacedDigit()
+                    if store.clock.state == .paused { Text("已暂停").font(.caption).foregroundStyle(.secondary) }
+                }
+                Text(store.snapshot.currentBlock?.cue ?? "先预览动作，再开始跟练。")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack {
+                    Button(action: primaryAction) {
+                        Label(store.clock.state == .running ? "暂停练习" : store.clock.state == .paused ? "继续练习" : "开始练习", systemImage: store.clock.state == .running ? "pause.fill" : "play.fill")
+                    }.buttonStyle(.borderedProminent)
+                        .disabled(store.clock.state != .running && !demonstration.isReady)
+                    if store.active {
+                        Button("下一段") { demonstration.advance(); if !store.active { music.stop() } }
+                        Button("结束") { demonstration.stop(); music.stop() }
+                    }
+                }
+                TrainingAISTTransport(demonstration: demonstration)
+            }
+        }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+    private var capturedControls: some View {
+        CapturedTrainingControls(store: captured)
     }
     private func primaryAction() {
-        switch store.clock.state {
-        case .running: store.pause(); music.pause()
-        case .paused: store.resume(); music.play()
-        default: store.start(); music.play()
-        }
+        if store.clock.state == .running { demonstration.pause(); music.pause() }
+        else if demonstration.startOrResume(), !store.isCustomPlan { music.play() }
     }
     private var planList: some View {
-        ClubCard {
-            VStack(alignment: .leading, spacing: 17) {
-                HStack {
-                    Text("今天怎么练").font(.title3.weight(.semibold)); Spacer()
-                    Text("\(store.plan.blocks.count) 段").font(.caption).foregroundStyle(.secondary)
-                }
-                HStack {
-                    Picker("舞种", selection: $store.style) { ForEach(DanceStyle.allCases) { Text($0.displayName).tag($0) } }.labelsHidden()
-                    Picker("时长", selection: $store.minutes) { ForEach([10, 15, 20, 30, 45], id: \.self) { Text("\($0) 分钟").tag($0) } }.labelsHidden().frame(width: 105)
-                }.disabled(store.active)
-                    .onChange(of: store.style) { _, _ in store.rebuild() }
-                    .onChange(of: store.minutes) { _, _ in store.rebuild() }
-                Picker("练习层级", selection: $store.level) {
-                    Text("入门 · 先找律动").tag(1)
-                    Text("基础进阶 · 加入协调").tag(2)
-                }.pickerStyle(.segmented).disabled(store.active)
-                    .onChange(of: store.level) { _, _ in store.rebuild() }
-                Divider()
-                ForEach(Array(store.plan.blocks.enumerated()), id: \.element.id) { index, block in
-                    HStack(spacing: 13) {
-                        Text(String(format: "%02d", index + 1)).font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(isCurrent(index) ? ClubTheme.accent : .secondary)
-                            .frame(width: 31, height: 31).background(isCurrent(index) ? ClubTheme.accent.opacity(0.12) : Color.primary.opacity(0.04), in: Circle())
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(block.title).font(.system(size: 12, weight: isCurrent(index) ? .bold : .medium))
-                            Text(block.kind.displayName).font(.caption2).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Text(clockText(Double(block.durationSeconds))).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        if let id = block.moveID, let move = DanceCatalog.move(id: id) {
-                            Button { selectedMove = move } label: { Image(systemName: "info.circle") }.buttonStyle(.plain).foregroundStyle(.secondary).help("查看动作提示")
-                        }
-                    }
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(store.plan.blocks.enumerated()), id: \.element.id) { index, block in
+                HStack(spacing: 12) {
+                    Text(String(format: "%02d", index + 1)).font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 25)
+                    Image(systemName: store.reference(for: block) != nil ? "figure.dance" : block.kind == .rest ? "cup.and.saucer" : "figure.walk")
+                        .frame(width: 20).foregroundStyle(ClubTheme.accent)
+                    Text(block.title).font(.callout.weight(store.active && store.snapshot.blockIndex == index ? .bold : .regular))
+                    Text(block.kind.displayName).font(.caption2).foregroundStyle(.secondary)
+                    Spacer()
+                    Text(clockText(Double(block.durationSeconds))).font(.caption.monospacedDigit())
                 }
             }
-        }
-    }
-    private func isCurrent(_ index: Int) -> Bool { store.active && store.snapshot.blockIndex == index }
-    private var focusCard: some View {
-        ClubCard {
-            VStack(alignment: .leading, spacing: 15) {
-                Eyebrow(text: "ONE THING AT A TIME")
-                Image(systemName: "figure.dance").font(.system(size: 35, weight: .light)).foregroundStyle(ClubTheme.accent)
-                Text("今天，先练稳定。").font(.title3.weight(.semibold))
-                Text("动作可以小一点。听见节拍，感受重心，再让手臂加入。").foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                Divider()
-                HStack { Text("此刻的用力感").font(.caption); Spacer(); Text("\(store.effort) / 10").font(.caption.monospacedDigit()) }
-                Slider(value: Binding(get: { Double(store.effort) }, set: { store.effort = Int($0) }), in: 1...10, step: 1)
-                Text("自我记录，不是 AI 测量；结束时保存。").font(.caption2).foregroundStyle(.secondary)
+            Divider()
+            HStack {
+                Text("此刻的用力感").font(.caption)
+                Slider(value: Binding(get: { Double(store.effort) }, set: { store.effort = Int($0) }), in: 1...10, step: 1).frame(width: 180)
+                Text("\(store.effort) / 10 · 自我记录").font(.caption).foregroundStyle(.secondary)
             }
-        }
+        }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
-    private var rhythmCard: some View {
-        ClubCard {
-            VStack(alignment: .leading, spacing: 16) {
-                Eyebrow(text: "FEEL THE EIGHT / 八拍")
-                TimelineView(.periodic(from: .now, by: 0.05)) { _ in
-                    HStack(spacing: 5) {
-                        ForEach(0..<8) { beat in
-                            Text("\(beat + 1)").font(.system(size: 11, weight: .semibold, design: .rounded))
-                                .frame(maxWidth: .infinity).frame(height: 29)
-                                .background(music.currentBeat == beat ? ClubTheme.lime : Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 7))
-                                .foregroundStyle(music.currentBeat == beat ? Color.black.opacity(0.8) : .primary)
-                        }
-                    }
+}
+
+private struct TrainingAISTStage: View {
+    @ObservedObject var player: AISTLibraryStore
+    var visualStyle: AISTVisualStyle
+    var showJointNames: Bool
+    var showSkeletonOverlay: Bool
+    var showReferenceGrid: Bool
+    var transparent: Bool
+    var body: some View {
+        Group {
+            if let sequence = player.selected, player.motion != nil {
+                TrainingFrameObserver(playback: player.playback) {
+                    AISTSkeletonView(joints: player.currentJoints, upAxis: player.upAxis, mirrored: player.mirrored,
+                                     resetToken: player.resetCamera, showJointNames: showJointNames, style: visualStyle,
+                                     showSkeletonOverlay: showSkeletonOverlay, showReferenceGrid: showReferenceGrid,
+                                     transparentBackground: transparent)
+                        .id(sequence.id + player.upAxis + String(player.optimized))
                 }
-                Text(music.sourceURL == nil ? "跟随原创节拍的音频播放进度。" : "本地音乐尚未标注节拍；用耳朵找到第一拍。").font(.caption).foregroundStyle(.secondary)
+            } else if player.loading {
+                ProgressView("正在载入动作…").frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ContentUnavailableView("动作示范尚未载入", systemImage: "figure.dance", description: Text(player.errorMessage ?? "请重新载入本地动作库。"))
             }
         }
     }
 }
-
-private struct GrooveArtwork: View {
+private struct TrainingFrameObserver<Content: View>: View {
+    @ObservedObject var playback: AISTPlaybackState
+    @ViewBuilder var content: () -> Content
+    var body: some View { content() }
+}
+private struct TrainingAISTTransport: View {
+    @ObservedObject var demonstration: TrainingDemonstrationStore
+    @ObservedObject private var player: AISTLibraryStore
+    @ObservedObject private var playback: AISTPlaybackState
+    init(demonstration: TrainingDemonstrationStore) {
+        self.demonstration = demonstration; self.player = demonstration.player
+        self.playback = demonstration.player.playback
+    }
     var body: some View {
-        Canvas { context, size in
-            let center = CGPoint(x: size.width * 0.55, y: size.height * 0.53)
-            for i in 0..<5 {
-                let r = CGFloat(40 + i * 23)
-                context.stroke(Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2)), with: .color(.white.opacity(0.13)), lineWidth: 1)
+        HStack(spacing: 9) {
+            if !demonstration.training.active {
+                Button(playback.isPlaying ? "暂停预览" : "预览动作") { demonstration.togglePreview() }.disabled(!demonstration.isReady)
             }
-            var stroke = Path()
-            stroke.move(to: CGPoint(x: 53, y: 159))
-            stroke.addCurve(to: CGPoint(x: 222, y: 97), control1: CGPoint(x: 6, y: 22), control2: CGPoint(x: 304, y: 249))
-            stroke.addCurve(to: CGPoint(x: 155, y: 196), control1: CGPoint(x: 168, y: -14), control2: CGPoint(x: 65, y: 236))
-            context.stroke(stroke, with: .color(ClubTheme.lime), style: StrokeStyle(lineWidth: 26, lineCap: .round))
-            context.fill(Path(ellipseIn: CGRect(x: 175, y: 29, width: 40, height: 40)), with: .color(ClubTheme.peach))
-            context.draw(Text("MOVE.").font(.system(size: 10, weight: .medium, design: .monospaced)).tracking(4).foregroundColor(.white.opacity(0.7)), at: CGPoint(x: 248, y: 224))
-        }
+            Picker("速度", selection: $player.speed) {
+                Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
+            }.labelsHidden().frame(width: 72)
+            Toggle("镜像", isOn: $player.mirrored).toggleStyle(.checkbox)
+            Button { player.resetCamera += 1 } label: { Image(systemName: "viewfinder") }.help("重置示范视角")
+        }.controlSize(.small).font(.caption)
+    }
+}
+
+private struct GeneratedSessionControls: View {
+    @ObservedObject var training: TrainingStore
+    @ObservedObject var practice: PracticeMotionStore
+    @ObservedObject private var playback: AISTPlaybackState
+
+    init(training: TrainingStore, practice: PracticeMotionStore) {
+        self.training = training
+        self.practice = practice
+        self.playback = practice.playback
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 18) {
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 12) {
+                    Text(training.active ? (training.snapshot.currentBlock?.title ?? "练习") : (training.clock.state == .completed ? "本次练习已完成" : "准备跟练"))
+                        .font(.title3.weight(.semibold))
+                    Text(clockText(training.snapshot.remainingSeconds)).font(.system(size: 28, weight: .medium, design: .rounded)).monospacedDigit()
+                }
+                Text(training.snapshot.currentBlock?.cue ?? "先看动作，再开始跟练。")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack {
+                    Button(action: primary) {
+                        Label(training.clock.state == .running ? "暂停练习" : training.clock.state == .paused ? "继续练习" : "开始练习",
+                              systemImage: training.clock.state == .running ? "pause.fill" : "play.fill")
+                    }.buttonStyle(.borderedProminent).disabled(practice.motion == nil && training.clock.state != .running)
+                    if training.active {
+                        Button("下一段") { training.advance(); if !training.active { practice.pause() } }
+                        Button("结束") { training.stop(); practice.pause() }
+                    }
+                }
+                HStack(spacing: 9) {
+                    if !training.active {
+                        Button(playback.isPlaying ? "暂停预览" : "预览动作") { practice.toggle() }.disabled(practice.motion == nil)
+                    }
+                    Picker("速度", selection: $practice.speed) {
+                        Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
+                    }.labelsHidden().frame(width: 72)
+                    Toggle("镜像", isOn: $practice.mirrored).toggleStyle(.checkbox)
+                }.controlSize(.small).font(.caption)
+            }
+        }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func primary() {
+        if training.clock.state == .running { training.pause(); practice.pause() }
+        else if training.clock.state == .paused { training.resume(); practice.play() }
+        else { training.start(); practice.play() }
+    }
+}
+
+private struct CapturedTrainingControls: View {
+    @ObservedObject var store: CapturedMotionStore
+    @ObservedObject private var playback: CapturedMotionPlayback
+    init(store: CapturedMotionStore) {
+        self.store = store; self.playback = store.playback
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(playback.isCompleted ? (playback.hasSkippedSegments ? "这段动作已播放完 · 中途跳过了片段" : "这段动作已播放完") : playback.currentSegment?.name ?? "还没有可跟练的动作")
+                        .font(.title3.weight(.semibold))
+                    if let segment = playback.currentSegment {
+                        Text("片段 \(playback.segmentIndex + 1) · 第 \(playback.repetitionIndex + 1) / \(segment.repeats) 次 · \(clockText(playback.elapsed)) / \(clockText(playback.planDuration))")
+                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    } else { Text("在视频里完成识别，或从动作库打开截出的动作。").font(.caption).foregroundStyle(.secondary) }
+                }
+                Spacer()
+                Button(playback.isPlaying ? "暂停跟练" : playback.isCompleted ? "再练一轮" : "开始跟练", systemImage: playback.isPlaying ? "pause.fill" : "play.fill") {
+                    playback.toggle()
+                }.buttonStyle(.borderedProminent).disabled(!playback.hasPlayableMotion)
+                Button("下一片段") { playback.nextSegment() }.disabled(!playback.hasPlayableMotion)
+                Button("结束") { playback.stop() }.disabled(!playback.hasPlayableMotion)
+            }
+            HStack {
+                Picker("示范速度", selection: $playback.speed) {
+                    Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
+                }.frame(width: 155)
+                Toggle("镜像示范", isOn: $playback.mirrored).toggleStyle(.checkbox)
+                Toggle("整段循环", isOn: $playback.loop).toggleStyle(.checkbox)
+                Spacer()
+            }.controlSize(.small).font(.caption)
+            Text("按原视频时间戳逐帧示范；缺失或多人帧保留并提示。当前计时是播放进度，尚未记入练习记录。")
+                .font(.caption2).foregroundStyle(.secondary)
+        }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 }

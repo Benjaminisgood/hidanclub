@@ -12,7 +12,7 @@ struct ResourceItem: Identifiable {
 struct ResourcesView: View {
     @State private var query = ""
     private let resources: [ResourceItem] = [
-        .init(id: "aist", category: "舞蹈数据", title: "AIST++", summary: "10 个舞种的 3D 动作标注，适合研究动作表示、音乐与动作的对应关系。", use: "标注 CC BY 4.0；原视频与音乐另有条款", url: "https://google.github.io/aistplusplus_dataset/"),
+        .init(id: "aist", category: "舞蹈数据", title: "AIST++", summary: "已接入完整发布集：1,408 条序列、10 个舞种、1,123,873 个独立 3D 帧。在动作库点开一条，即可慢放、循环并开始练习。", use: "原始与官方优化全帧坐标；CC BY 4.0；原视频与音乐另有条款", url: "https://google.github.io/aistplusplus_dataset/"),
         .init(id: "fine", category: "舞蹈数据", title: "FineDance", summary: "关注手部与全身细节的音乐舞蹈数据。论文总量与公开子集大小不同。", use: "研究参考；非商业与分发限制", url: "https://github.com/li-ronghui/FineDance"),
         .init(id: "edge", category: "生成研究", title: "EDGE", summary: "音乐条件下生成舞蹈的研究系统，不能据此认定生成动作适合教学或训练。", use: "代码、权重和训练素材分别核对许可", url: "https://github.com/Stanford-TML/EDGE"),
         .init(id: "amass", category: "动作数据", title: "AMASS", summary: "统一人体动作捕捉数据，涵盖范围很广，并非街舞教学动作库。", use: "不作为本应用内置训练素材", url: "https://amass.is.tue.mpg.de/"),
@@ -41,7 +41,7 @@ struct ResourcesView: View {
                         }
                     }
                 }
-                Text("调研日期：2026-09-09。完整来源、授权范围与技术方案位于项目 docs 目录。未在应用中打包第三方舞蹈数据、视频或模型权重。")
+                Text("调研日期：2026-09-09。完整来源与数据校验见项目 docs。AIST++ 坐标存放在本机应用支持目录，独立于应用包；原视频、音乐及模型权重尚未下载。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(32)
         }

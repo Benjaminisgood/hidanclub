@@ -1,0 +1,101 @@
+{
+  "sourceURL": "https://aistdancedb.ongaaccel.jp/data/choreo.xlsx",
+  "entries": [
+    {
+      "id": "aist-gMH-ch07",
+      "style": "hipHop",
+      "genreCode": "gMH",
+      "choreographyCode": "ch07",
+      "name": "box",
+      "observationCue": "观察双脚的移动方向、交替支撑，以及髋部随步伐的变化。"
+    },
+    {
+      "id": "aist-gMH-ch09",
+      "style": "hipHop",
+      "genreCode": "gMH",
+      "choreographyCode": "ch09",
+      "name": "running man",
+      "observationCue": "先看清双腿交替和脚部前后移动，再观察手臂怎样配合。"
+    },
+    {
+      "id": "aist-gMH-ch01",
+      "style": "hipHop",
+      "genreCode": "gMH",
+      "choreographyCode": "ch01",
+      "name": "roger rabbit",
+      "observationCue": "观察脚部的前后关系、膝部起伏和身体移动的节奏。"
+    },
+    {
+      "id": "aist-gPO-ch01",
+      "style": "popping",
+      "genreCode": "gPO",
+      "choreographyCode": "ch01",
+      "name": "fresno",
+      "observationCue": "观察左右交替时手臂、肩线与髋部的位置变化。"
+    },
+    {
+      "id": "aist-gPO-ch02",
+      "style": "popping",
+      "genreCode": "gPO",
+      "choreographyCode": "ch02",
+      "name": "walk out",
+      "observationCue": "观察迈步时脚部路线与上肢姿态，留意动作的停与走。"
+    },
+    {
+      "id": "aist-gPO-ch05",
+      "style": "popping",
+      "genreCode": "gPO",
+      "choreographyCode": "ch05",
+      "name": "body wave",
+      "observationCue": "观察肩线、髋部和膝部变化的先后顺序；细小躯干弯曲无法由17点完整呈现。"
+    },
+    {
+      "id": "aist-gLO-ch01",
+      "style": "locking",
+      "genreCode": "gLO",
+      "choreographyCode": "ch01",
+      "name": "lock",
+      "observationCue": "观察手臂与躯干在移动和短暂停留之间的变化。"
+    },
+    {
+      "id": "aist-gLO-ch03",
+      "style": "locking",
+      "genreCode": "gLO",
+      "choreographyCode": "ch03",
+      "name": "point",
+      "observationCue": "观察手臂指向、肩线方向和脚步的配合；手指细节不在17点数据中。"
+    },
+    {
+      "id": "aist-gLO-ch06",
+      "style": "locking",
+      "genreCode": "gLO",
+      "choreographyCode": "ch06",
+      "name": "stop and go",
+      "observationCue": "观察连续移动与停顿出现的位置，以及上下肢的配合。"
+    },
+    {
+      "id": "aist-gHO-ch01",
+      "style": "house",
+      "genreCode": "gHO",
+      "choreographyCode": "ch01",
+      "name": "loose legs",
+      "observationCue": "观察双腿交替、脚步方向和髋部持续变化的节奏。"
+    },
+    {
+      "id": "aist-gHO-ch03",
+      "style": "house",
+      "genreCode": "gHO",
+      "choreographyCode": "ch03",
+      "name": "side kick",
+      "observationCue": "观察一侧腿移动时另一侧的支撑，以及手臂与躯干的配合。"
+    },
+    {
+      "id": "aist-gHO-ch08",
+      "style": "house",
+      "genreCode": "gHO",
+      "choreographyCode": "ch08",
+      "name": "shuffle",
+      "observationCue": "观察双脚交替的路线、步伐切换与身体起伏。"
+    }
+  ]
+}

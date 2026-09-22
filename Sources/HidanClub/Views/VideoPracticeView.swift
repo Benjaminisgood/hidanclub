@@ -1,122 +1,129 @@
-import SwiftUI
+import AVFoundation
 import AVKit
+import SwiftUI
 import UniformTypeIdentifiers
 
 struct VideoPracticeView: View {
-    @ObservedObject var video: VideoService
+    let video: VideoService
     @ObservedObject var analyzer: PoseAnalyzer
+    @ObservedObject var store: CapturedMotionStore
+    var onPractice: (() -> Void)? = nil
+    var canPractice = true
     @State private var importing = false
-    @State private var analysisURL: URL?
-    @State private var isAnalysisImport = false
-    @State private var exportError: String?
+    @State private var sourceAspectRatio = 1.0
+    @State private var captureName = ""
+    @State private var importToken = UUID()
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
-                        Eyebrow(text: "VIDEO LAB / 视频练习")
-                        Text("把一个动作，慢慢看清。").font(.system(size: 30, weight: .bold))
-                        Text("导入本地示范，镜像、慢放与循环；再分析自己的练习视频。").foregroundStyle(.secondary)
+                        Eyebrow(text: "CAPTURE / 把舞蹈变成练习")
+                        Text("上传一段舞，留下整套动作。").font(.system(size: 30, weight: .bold))
+                        Text("逐帧捕捉 → 保存二维动作模型 → 排列片段 → 直接跟练").foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("导入示范", systemImage: "film") { isAnalysisImport = false; importing = true }
-                        .buttonStyle(.borderedProminent)
+                    Button("上传舞蹈视频", systemImage: "square.and.arrow.up") { importing = true }.buttonStyle(.borderedProminent)
                 }
                 ClubCard {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if video.name != nil {
-                            VideoPlayer(player: video.player)
-                                .scaleEffect(x: video.mirrored ? -1 : 1, y: 1)
-                                .frame(height: 360).clipShape(RoundedRectangle(cornerRadius: 14))
-                        } else {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 16).fill(.primary.opacity(0.04))
-                                VStack(spacing: 15) {
-                                    Image(systemName: "play.rectangle.on.rectangle").font(.system(size: 46, weight: .ultraLight)).foregroundStyle(ClubTheme.accent)
-                                    Text("你的第一段示范，从这里开始").font(.title3.weight(.semibold))
-                                    Text("支持本地 MOV / MP4 · 不附带第三方教学视频").foregroundStyle(.secondary)
-                                    Button("选择视频…") { isAnalysisImport = false; importing = true }
-                                }
-                            }.frame(height: 300)
-                        }
-                        HStack(spacing: 18) {
-                            Button(action: video.toggle) { Label(video.isPlaying ? "暂停" : "播放", systemImage: video.isPlaying ? "pause.fill" : "play.fill") }
-                                .disabled(video.name == nil)
-                            Text(clockText(video.currentTime) + " / " + clockText(video.duration)).monospacedDigit().foregroundStyle(.secondary)
-                            Spacer()
-                            Toggle("镜像画面", isOn: $video.mirrored).toggleStyle(.switch).fixedSize()
-                            Picker("速度", selection: Binding(get: { video.rate }, set: video.setRate)) {
-                                Text("0.5×").tag(Float(0.5)); Text("0.75×").tag(Float(0.75)); Text("1×").tag(Float(1))
-                            }.frame(width: 135)
-                        }
-                        if video.duration > 0 {
-                            Slider(value: Binding(get: { video.currentTime }, set: video.seek), in: 0...max(video.duration, 1))
+                    VStack(alignment: .leading, spacing: 14) {
+                        SourceVideoPreviewCard(video: video)
+                        if analyzer.isAnalyzing {
                             HStack {
-                                Toggle("A–B 循环", isOn: $video.loopEnabled).toggleStyle(.checkbox)
-                                Button("设 A：\(clockText(video.loopStart))") { video.loopStart = min(video.currentTime, max(0, video.loopEnd - 0.25)) }
-                                Button("设 B：\(clockText(video.loopEnd))") { video.loopEnd = max(video.currentTime, min(video.duration, video.loopStart + 0.25)) }
-                                Spacer()
-                                Text(video.name ?? "").font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                ProgressView(value: analyzer.progress)
+                                Text("逐帧捕捉 \(Int(analyzer.progress * 100))%").font(.caption.monospacedDigit())
+                                Button("取消") { analyzer.cancel() }
                             }
+                            Text("保留每一帧及其原始时间戳。完整视频的分析可能需要较长时间。").font(.caption).foregroundStyle(.secondary)
                         }
-                        if let message = video.errorMessage { Text(message).foregroundStyle(.red) }
+                        if let error = analyzer.errorMessage { Text(error).foregroundStyle(.red) }
                     }
                 }
-                analysisCard
+                ClubCard { CapturedMotionView(store: store, onPractice: onPractice, canPractice: canPractice) }
             }.padding(32)
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.movie, .video]) { result in
             switch result {
-            case .success(let url):
-                if isAnalysisImport { analysisURL = url; analyzer.analyze(url: url) }
-                else { video.load(url: url) }
-            case .failure(let error): exportError = error.localizedDescription
+            case .success(let url): importVideo(url)
+            case .failure(let error): store.errorMessage = error.localizedDescription
             }
         }
-        .alert("文件操作失败", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) { Button("好") {} } message: { Text(exportError ?? "") }
+        .onChange(of: analyzer.report?.createdAt, initial: true) { _, _ in
+            guard let report = analyzer.report else { return }
+            do { try store.acceptAnalysis(report) }
+            catch { store.errorMessage = error.localizedDescription }
+        }
     }
 
-    private var analysisCard: some View {
-        ClubCard {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    Label("动作观察室", systemImage: "figure.dance").font(.title2.weight(.semibold))
-                    Spacer()
-                    if analyzer.isAnalyzing {
-                        Button("取消分析", role: .cancel) { analyzer.cancel() }
-                    } else {
-                        Button("分析练习视频…") { isAnalysisImport = true; importing = true }
-                    }
-                }
-                Text("在这台 Mac 上识别身体关键点，保留每一帧及其时间戳。适合观察身体轨迹，暂不识别舞步名称或给舞蹈质量打分。")
-                    .foregroundStyle(.secondary)
-                if analyzer.isAnalyzing {
-                    ProgressView(value: analyzer.progress)
-                    Text("正在逐帧分析 · \(Int(analyzer.progress * 100))%　长视频可能需要较长时间").font(.caption).foregroundStyle(.secondary)
-                }
-                if let report = analyzer.report {
-                    HStack(spacing: 36) {
-                        metric("解码帧数", "\(report.decodedFrameCount)")
-                        metric("检测到单人", "\(report.detectedFrameCount)")
-                        metric("检测覆盖率", String(format: "%.1f%%", report.coverage * 100))
-                        Spacer()
-                        Button("导出骨架 JSON", systemImage: "square.and.arrow.up") { export() }
-                    }
-                    Text(report.sourceName).font(.caption).foregroundStyle(.secondary)
-                    PoseReviewView(report: report)
-                    Text("检测覆盖率表示可用关键点的覆盖情况，不代表舞蹈水平。多人、遮挡、脚部出画或快速转身会影响检测。").font(.caption).foregroundStyle(.secondary)
-                }
-                if let error = analyzer.errorMessage { Text(error).foregroundStyle(.red) }
-            }
+    private func importVideo(_ url: URL) {
+        video.pause(); analyzer.cancel(); store.pause()
+        let token = UUID(); importToken = token
+        captureName = url.deletingPathExtension().lastPathComponent
+        Task {
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let asset = AVURLAsset(url: url)
+                guard let track = try await asset.loadTracks(withMediaType: .video).first else { throw PoseAnalysisError.noVideoTrack }
+                let size = try await track.load(.naturalSize), transform = try await track.load(.preferredTransform)
+                let oriented = size.applying(transform)
+                let ratio = abs(oriented.width / oriented.height)
+                guard ratio.isFinite, ratio > 0 else { throw PoseAnalysisError.unsupportedTransform }
+                guard token == importToken else { return }
+                sourceAspectRatio = ratio
+                store.beginCapture(name: captureName, imageAspectRatio: ratio)
+                video.load(url: url); analyzer.analyze(url: url)
+            } catch { if token == importToken { store.errorMessage = error.localizedDescription } }
         }
     }
-    private func metric(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) { Text(value).font(.system(size: 28, weight: .semibold, design: .rounded)); Text(title).font(.caption).foregroundStyle(.secondary) }
+}
+
+/// Source-video clock changes stay inside this card, so playing a reference does
+/// not repeatedly recompute full-frame capture metrics and arrangement rows.
+private struct SourceVideoPreviewCard: View {
+    @ObservedObject var video: VideoService
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if video.name != nil {
+                DisclosureGroup("原视频核对 · 镜像、慢放与 A–B 循环") {
+                    CapturedSourceVideoView(video: video)
+                }
+            } else {
+                ContentUnavailableView("选择全身清晰的单人舞蹈视频", systemImage: "film", description: Text("MOV / MP4 · 视频和模型保留在这台 Mac · 不上传到服务器")).frame(height: 190)
+            }
+            if let error = video.errorMessage { Text(error).foregroundStyle(.red) }
+        }
     }
-    private func export() {
-        let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "dance-pose.json"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        do { try analyzer.export(to: url) } catch { exportError = error.localizedDescription }
+}
+
+private struct CapturedSourceVideoView: View {
+    @ObservedObject var video: VideoService
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NativeVideoPlayer(player: video.player)
+                .scaleEffect(x: video.mirrored ? -1 : 1, y: 1)
+                .frame(height: 260).clipShape(RoundedRectangle(cornerRadius: 16))
+            HStack {
+                Button(action: video.toggle) { Label(video.isPlaying ? "暂停原视频" : "播放原视频", systemImage: video.isPlaying ? "pause.fill" : "play.fill") }
+                Text(String(format: "%.2f / %.2f 秒", video.currentTime, video.duration)).font(.caption.monospacedDigit())
+                Spacer()
+                Toggle("镜像画面", isOn: $video.mirrored).toggleStyle(.checkbox)
+                Picker("速度", selection: Binding(get: { video.rate }, set: video.setRate)) {
+                    Text("0.25×").tag(Float(0.25)); Text("0.5×").tag(Float(0.5)); Text("0.75×").tag(Float(0.75)); Text("1×").tag(Float(1))
+                }.frame(width: 130)
+            }
+            if video.duration > 0 {
+                Slider(value: Binding(get: { video.currentTime }, set: video.seek), in: 0...max(video.duration, 0.001))
+                HStack {
+                    Toggle("原视频 A–B 循环", isOn: $video.loopEnabled).toggleStyle(.checkbox)
+                    Button(String(format: "设 A：%.2f 秒", video.loopStart)) { video.loopStart = min(video.currentTime, max(0, video.loopEnd - 0.25)) }
+                    Button(String(format: "设 B：%.2f 秒", video.loopEnd)) { video.loopEnd = max(video.currentTime, min(video.duration, video.loopStart + 0.25)) }
+                    Spacer()
+                }
+            }
+            Text(video.name ?? "").font(.caption).foregroundStyle(.secondary)
+            Text("原视频控制用于人工核对，与下方模型编排独立播放。模型不依赖源视频即可保存并跟练。").font(.caption2).foregroundStyle(.secondary)
+        }.padding(.top, 12)
     }
 }

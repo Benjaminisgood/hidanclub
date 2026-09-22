@@ -2,7 +2,7 @@
   "schema_version": 1,
   "checked_at": "2026-09-09",
   "language": "zh-Hans",
-  "scope": "10 resource groups; official pages, READMEs, license files and paper abstract; no dataset, music, video or weights downloaded",
+  "scope": "10 resource groups; official pages, READMEs, license files and paper abstracts; complete AIST++ 3D keypoints, cameras, splits and ignore list downloaded and verified; no original videos, music or model weights downloaded",
   "status_semantics": "Each license decision applies only to its asset_scope. unverified/unresolved is not permission. Separate underlying media, body models, training data and weights may have independent terms.",
   "sources": {
     "aist_home": {
@@ -139,6 +139,46 @@
       "url": "https://www.redbull.com/int-en/dance-tutorials",
       "access_status": "http_403",
       "checked_at": "2026-09-09"
+    },
+    "aist_formats": {
+      "url": "https://aistdancedb.ongaaccel.jp/data_formats/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aist_download": {
+      "url": "https://aistdancedb.ongaaccel.jp/database_download/",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aist_choreography_names": {
+      "url": "https://aistdancedb.ongaaccel.jp/data/choreo.xlsx",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_release": {
+      "url": "https://github.com/google/aistplusplus_dataset/releases/tag/v1.0",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_downloader": {
+      "url": "https://raw.githubusercontent.com/google/aistplusplus_api/main/downloader.py",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_video_utils": {
+      "url": "https://raw.githubusercontent.com/google/aistplusplus_api/main/aist_plusplus/utils.py",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_features_license": {
+      "url": "https://raw.githubusercontent.com/google/aistplusplus_api/main/aist_plusplus/features/kinetic.py",
+      "access_status": "verified",
+      "checked_at": "2026-09-09"
+    },
+    "aistpp_legacy_video_list": {
+      "url": "https://storage.googleapis.com/aist_plusplus_public/20121228/video_list.txt",
+      "access_status": "http_403",
+      "checked_at": "2026-09-09"
     }
   },
   "resources": [
@@ -152,7 +192,9 @@
       "facts": {
         "dance_genres": 10,
         "professional_dancers": 40,
-        "max_cameras": 9
+        "max_cameras": 9,
+        "basic_action_names": 100,
+        "basic_action_names_source_id": "aist_choreography_names"
       },
       "suitable_for": [
         "舞种分类研究",
@@ -186,8 +228,9 @@
         }
       ],
       "caveats": [
-        "舞种与场景标签不等于分步教学动作和正确性标签。",
-        "未下载实际数据。"
+        "舞种、场景和基础动作名不等于分步教学正确性标签。",
+        "原视频和音乐未下载；100个基础动作短名已从官方表只读提取，保留原拼写和出处。",
+        "原下载页允许分享单视频永久URL，使用原媒体前的表单和用途条件保持独立。"
       ]
     },
     {
@@ -196,13 +239,12 @@
       "kind": "dance_pose_annotation_dataset",
       "homepage": "https://google.github.io/aistplusplus_dataset/",
       "relevance": "high",
-      "first_release_decision": "optional_attributed_keypoint_adapter",
+      "first_release_decision": "full_frame_3d_reference_library_installed",
       "facts": {
         "sequences": 1408,
         "dance_genres": 10,
         "subjects": 30,
         "views": 9,
-        "frames_approximately": 10100000,
         "annotation_fps": 60,
         "sequence_duration_seconds": [
           7.4,
@@ -214,12 +256,26 @@
           "pickle",
           "COCO 2D/3D keypoints",
           "SMPL pose parameters"
-        ]
+        ],
+        "multiview_images_published": 10108015,
+        "independent_3d_frames_installed": 1123873,
+        "frame_count_semantics": "sum of N across 1408 cAll sequences; raw and optimized variants share the same timeline and are not counted twice; published images are multi-camera observations",
+        "coordinate_storage": "little-endian Float64; raw and official optimized variants retained",
+        "coordinate_units": "source dataset units; physical unit not verified",
+        "up_axis": "Y, supported by official API source",
+        "full_frame_retention": true,
+        "official_ignored_sequences_retained": 45,
+        "basic_action_names": 100,
+        "basic_action_names_source_id": "aist_choreography_names",
+        "basic_action_name_join": "sBM only; genreCode + choreographyCode; source spelling retained",
+        "music_tempo_bpm": "mHO0..5: 110 + 5*index; other genres mXX0..5: 80 + 10*index; no first-beat phase inferred"
       },
       "suitable_for": [
+        "全帧3D动作参考与逐帧观察",
+        "动作名和舞种检索种子",
+        "完整连续片段与分段跟练",
         "动作表示与关节映射",
         "跟练算法离线研究",
-        "动作检索种子",
         "音乐动作对齐研究"
       ],
       "licenses": [
@@ -240,9 +296,10 @@
           "commercial_use_status": "permitted_with_conditions",
           "redistribution_status": "permitted_with_conditions",
           "evidence_source_ids": [
-            "aistpp_code_license"
+            "aistpp_code_license",
+            "aistpp_features_license"
           ],
-          "notes": ""
+          "notes": "Repository root is Apache-2.0; fairmotion-derived feature files include separate BSD notices. Review per-file notices when copying code."
         },
         {
           "asset_scope": "original_video_and_music",
@@ -281,11 +338,39 @@
         }
       ],
       "caveats": [
-        "原视频帧率可能与标注不同，必须对齐时间。",
-        "ignore_list.txt 是不良重建排除清单。",
+        "官网10,108,015统计多机位图像，不是独立3D时间帧；本机全量N累加为1,123,873。",
+        "原始与官方优化两层均保存Float64全部帧、源顺序和缺失值，不额外平滑、降采样或插值。",
+        "ignore_list.txt标记低质量序列，45条全部保留；质量标记不等于教师审核。",
+        "原视频FPS可能与60Hz标注不同；后续保留全部源帧和PTS，并显式建立时间映射，不自动套用官方fps重采样。",
+        "没有独立全量静态图像包；对应图像需从原AIST视频解码，媒体条款与Google标注独立。",
+        "官方下载器的旧视频列表URL本轮HTTP403，单视频永久URL仍可访问。",
+        "100基础动作短名来自原AIST元数据，仅匹配sBM，不套用于sFM，也不视为AI分类结果。",
+        "BPM映射不包含首拍相位，八拍区间不能宣称已自动对齐原音乐。",
         "评估姿态按主体切分；评估生成按音乐/编舞切分。",
-        "未下载或检验归档。"
-      ]
+        "当前未下载2D、SMPL motion归档或原视频/音乐；标注校验不能代替UI或舞蹈教学验证。"
+      ],
+      "local_installation": {
+        "checked_at": "2026-09-09",
+        "directory": "~/Library/Application Support/HidanClub/Datasets/AISTPlusPlus/",
+        "source_assets": [
+          "keypoints3d.zip",
+          "cameras.zip",
+          "splits.zip",
+          "ignore_list.txt"
+        ],
+        "keypoints3d_zip_bytes": 876142511,
+        "keypoints3d_zip_sha256": "8b2a3bfcea233b8d1859a0dc93c7800a8f9e832136ef6828d0b3ddff640ddcfd",
+        "binary_bytes_both_variants": 917080368,
+        "sequence_count": 1408,
+        "independent_frame_count": 1123873,
+        "genre_count": 10,
+        "source_sha256_matches_official_release": true,
+        "archive_crc_passed": true,
+        "all_coordinates_byte_exact": true,
+        "data_documentation": "../AIST_DATASET.md",
+        "software_verification": "../VERIFICATION.md",
+        "ui_verification_status": "tracked_separately_not_inferred_from_data_checks"
+      }
     },
     {
       "id": "finedance",
@@ -757,8 +842,9 @@
     "原创动作卡与教练授权或用户自录示范",
     "本地关节轨迹，保存全部捕获帧和时间戳",
     "原创节拍器/节拍音频及用户本地文件播放",
-    "AIST++ 标注可选适配器，单独署名与许可记录",
-    "STEEZY 等教学资源仅使用原创摘要和官方外链",
+    "已安装的AIST++完整3D参考库，1408序列1123873时间帧，原始/官方优化双Float64全帧保留",
+    "按来源名称检索基础动作，收藏与连续片段训练保留原序列ID和帧范围",
+    "STEEZY等教学资源仅使用原创摘要和官方外链",
     "已审核动作的规则编排，生成模型后续独立实验"
   ],
   "asset_provenance_fields": [
