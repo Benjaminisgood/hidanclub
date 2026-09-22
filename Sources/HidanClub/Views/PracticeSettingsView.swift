@@ -32,8 +32,12 @@ struct PracticeSettingsView: View {
                 coordinates
                 practice
                 data
-            }.padding(28).frame(maxWidth: 760, alignment: .leading)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
+            .padding(28)
+            .frame(maxWidth: 760, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var appearance: some View {

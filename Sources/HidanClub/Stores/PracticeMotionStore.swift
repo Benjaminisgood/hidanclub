@@ -81,6 +81,11 @@ import HidanCore
     func seek(_ frame: Int) {
         playback.frameIndex = min(max(0, frame), max(0, frameCount - 1))
     }
+    func step(_ delta: Int) {
+        pause()
+        let result = playback.frameIndex.addingReportingOverflow(delta)
+        seek(result.overflow ? (delta > 0 ? Int.max : 0) : result.partialValue)
+    }
 
     private func load(_ move: DanceMove, resume: Bool) {
         pause()

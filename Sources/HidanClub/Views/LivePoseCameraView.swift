@@ -81,8 +81,47 @@ import SwiftUI
 @MainActor struct LivePoseCameraControls: View {
     @ObservedObject var camera: LivePoseCamera
     @ObservedObject private var frames: LivePoseCameraFrames
-    init(camera: LivePoseCamera) { self.camera = camera; self.frames = camera.frames }
+    var compact = false
+    init(camera: LivePoseCamera, compact: Bool = false) {
+        self.camera = camera
+        self.frames = camera.frames
+        self.compact = compact
+    }
     var body: some View {
+        if compact { compactBody } else { detailedBody }
+    }
+    private var compactBody: some View {
+        HStack(spacing: 6) {
+            if camera.isRunning || camera.isBusy {
+                Button("停用", systemImage: "camera.fill") { camera.stop() }
+            } else {
+                Button("启用", systemImage: "camera") { camera.start() }
+                    .disabled(camera.isFinishingRecording)
+            }
+            Button("画面镜像") { camera.mirrored.toggle() }
+            if camera.isFinishingRecording {
+                ProgressView().controlSize(.small)
+            } else if camera.isRecording {
+                Button("停止录像", systemImage: "stop.circle.fill") { camera.stopRecording() }.tint(.red)
+            } else {
+                Button("录像", systemImage: "record.circle") { camera.startRecording() }
+                    .disabled(!camera.isRunning)
+            }
+            if camera.isRunning {
+                Text("\(Int(camera.statistics.captureFramesPerSecond.rounded())) fps")
+                    .font(.caption2.monospaced()).foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            if camera.state == .denied {
+                Button("相机权限") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera") { NSWorkspace.shared.open(url) }
+                }
+            }
+        }
+        .controlSize(.small)
+        .font(.caption)
+    }
+    private var detailedBody: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 12) {
                 if camera.isRunning || camera.isBusy {

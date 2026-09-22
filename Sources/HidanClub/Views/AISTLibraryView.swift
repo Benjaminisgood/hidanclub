@@ -183,16 +183,14 @@ struct AISTLibraryView: View {
 
     private var detail: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Button("全部动作", systemImage: "chevron.left") { showDetail = false }
-                    .buttonStyle(.plain).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
                 if let error = store.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
                 if let selected = store.selected {
                     sequenceHeader(selected)
                     AISTPlaybackObserver(playback: store.playback) {
-                        VStack(spacing: 18) {
+                        VStack(spacing: 8) {
                             stage(selected)
                             transport(selected)
                         }
@@ -210,119 +208,69 @@ struct AISTLibraryView: View {
     }
 
     private func sequenceHeader(_ sequence: AISTSequence) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(store.name(for: sequence)).font(.title2.bold()).textSelection(.enabled)
-                    Text("\(sequence.genreName) / \(sequence.category) / \(sequence.dancerID)").font(.callout).foregroundStyle(.secondary)
-                }
-                Spacer()
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Button { showDetail = false } label: { Image(systemName: "chevron.left") }
+                    .buttonStyle(.plain).foregroundStyle(.secondary).help("全部动作")
+                Text(store.name(for: sequence)).font(.title3.weight(.semibold)).lineLimit(1).textSelection(.enabled)
+                Text("\(sequence.genreName) · \(sequence.category) · \(sequence.dancerID)")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text(sequence.id).font(.system(size: 10, design: .monospaced)).foregroundStyle(.tertiary).lineLimit(1).textSelection(.enabled).layoutPriority(-1)
+                Spacer(minLength: 8)
                 Button { store.toggleFavorite(sequence.id) } label: {
                     Image(systemName: store.favorites.contains(sequence.id) ? "star.fill" : "star")
                 }.help("收藏动作")
                 Button("来源说明") { showDataInfo = true }
-            }
-            Text(sequence.id).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary).textSelection(.enabled)
+            }.controlSize(.small)
             if sequence.ignored {
                 Label("官方标记此序列重建质量较低；所有帧仍保留。", systemImage: "exclamationmark.triangle")
-                    .font(.caption).foregroundStyle(.orange)
+                    .font(.caption2).foregroundStyle(.orange)
             }
         }
     }
 
     private func stage(_ sequence: AISTSequence) -> some View {
-        VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                AISTSkeletonView(joints: store.currentJoints, upAxis: store.upAxis, mirrored: store.mirrored,
-                                 resetToken: store.resetCamera, showJointNames: showJointNames,
-                                 style: visualStyle, showSkeletonOverlay: skeletonOverlay,
-                                 showReferenceGrid: showReferenceGrid)
-                    .id(sequence.id + store.upAxis + String(store.optimized))
-                    .frame(height: 420)
-                    .accessibilityLabel("AIST++ \(visualStyle.title)，可拖动旋转，滚动缩放")
-                HStack {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(visualStyle == .skeleton ? "MOTION / SKELETON" : "MOTION / FIGURE").tracking(1.7)
-                        Text(visualStyle.title).font(.system(size: 15, weight: .semibold))
-                    }
-                    Spacer()
-                    Text(store.sourceLabel)
-                }.font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(visualStyle == .porcelain ? Color(red: 0.27, green: 0.32, blue: 0.39) : .white.opacity(0.75))
-                    .padding(18).allowsHitTesting(false)
-                if store.loading { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
-                if !store.loading && validJointCount < 17 {
-                    VStack {
-                        Spacer()
-                        Label("当前帧 \(validJointCount) / 17 个关节可见", systemImage: "info.circle")
-                            .font(.caption2).padding(8)
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .padding(14)
-                    }.allowsHitTesting(false)
-                }
-                VStack {
-                    Spacer()
-                    HStack(spacing: 8) {
-                        Spacer()
-                        stagePlayButton
-                        Button(training.active ? "继续练习" : "开始练习", action: startPractice)
-                            .buttonStyle(.borderedProminent).controlSize(.large)
-                            .disabled(!training.active && (store.motion == nil || store.loading))
-                            .accessibilityIdentifier("aist.startPractice")
-                    }
-                }.padding(14)
-            }
-            HStack(spacing: 12) {
-                Toggle("镜像", isOn: $store.mirrored)
-                Spacer()
-                Button("重置视角", systemImage: "arrow.counterclockwise") { store.resetCamera += 1 }
-            }.font(.caption).toggleStyle(.checkbox).padding(12).background(Color.primary.opacity(0.04))
-        }.clipShape(RoundedRectangle(cornerRadius: 17))
-    }
-
-    private var validJointCount: Int {
-        store.currentJoints.filter { $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }.count
-    }
-
-    private var stagePlayButton: some View {
-        Button { store.toggle() } label: {
-            Label(store.isPlaying ? "暂停动作" : "播放动作", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
-                .font(.system(size: 12, weight: .semibold))
-        }.buttonStyle(.borderedProminent).controlSize(.large)
-            .disabled(store.motion == nil).accessibilityIdentifier("aist.stage.play")
+        MotionStageChrome(
+            joints: store.currentJoints, upAxis: store.upAxis, mirrored: store.mirrored,
+            resetToken: store.resetCamera, loading: store.loading,
+            identity: sequence.id + store.upAxis + String(store.optimized),
+            visualStyle: visualStyle, showJointNames: showJointNames,
+            showSkeletonOverlay: skeletonOverlay, showReferenceGrid: showReferenceGrid)
     }
 
     private func transport(_ sequence: AISTSequence) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(String(format: "%.2f / %.2f 秒", Double(store.frameIndex) / sequence.fps, sequence.duration)).monospacedDigit()
-                Spacer()
+                Spacer(minLength: 8)
                 Text("帧 \(store.frameIndex + 1) / \(sequence.frameCount)").monospacedDigit()
-            }.font(.caption).foregroundStyle(.secondary)
+            }.font(.caption2).foregroundStyle(.secondary)
             Slider(value: Binding(get: { Double(store.frameIndex) }, set: { store.pause(); store.seek(Int($0)) }),
-                   in: 0...Double(max(1, sequence.frameCount - 1)), step: 1).accessibilityLabel("动作帧")
-            HStack(spacing: 10) {
+                   in: 0...Double(max(1, sequence.frameCount - 1)), step: 1).controlSize(.small).accessibilityLabel("动作帧")
+            HStack(spacing: 6) {
+                Button { store.toggle() } label: {
+                    Label(store.isPlaying ? "暂停" : "播放", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
+                }.disabled(store.motion == nil).accessibilityIdentifier("aist.stage.play")
+                Button(training.active ? "继续练习" : "开始练习", action: startPractice)
+                    .disabled(!training.active && (store.motion == nil || store.loading))
+                    .accessibilityIdentifier("aist.startPractice")
+                Button("镜像") { store.mirrored.toggle() }
+                Button("重置视角", systemImage: "arrow.counterclockwise") { store.resetCamera += 1 }
                 Button { store.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
                 Button { store.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
-                Spacer()
                 Picker("速度", selection: $store.speed) {
                     ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                }.frame(width: 125)
+                }.frame(width: 72)
             }
-            HStack {
+            .controlSize(.small)
+            .font(.caption)
+            HStack(spacing: 6) {
                 Button("设 A") { store.setA() }
                 Button("设 B") { store.setB() }
-                Text("\(store.loopStart + 1)–\(store.loopEnd + 1) 帧").font(.caption.monospacedDigit())
-                Spacer()
-                Button("8 拍长度") { store.eightBeats() }.disabled(sequence.bpm == nil)
+                Text("\(store.loopStart + 1)–\(store.loopEnd + 1)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                Button("8 拍") { store.eightBeats() }.disabled(sequence.bpm == nil).help("从当前帧起，按音乐 BPM 取 8 拍长度")
                 Button("全段") { store.fullRange() }
                 Toggle("循环", isOn: $store.loopEnabled).toggleStyle(.checkbox)
-            }
-            Text("缺失关节不绘制，原帧保留。8 拍按音乐 BPM 计算片段长度，起点由你选择。坐标来源在设置里。")
-                .font(.caption2).foregroundStyle(.secondary)
-            HStack {
-                Text("连续 \(store.loopEnd - store.loopStart + 1) 帧 · \(String(format: "%.2f", store.loopDuration)) 秒").font(.caption).foregroundStyle(.secondary)
-                Spacer()
                 Button("节拍", systemImage: "metronome") {
                     guard let bpm = sequence.bpm else { return }
                     music.useBeat(); music.bpm = Double(bpm); music.rate = Float(store.speed); music.play()
@@ -334,11 +282,13 @@ struct AISTLibraryView: View {
                     } catch { message = error.localizedDescription }
                 }.disabled(store.motion == nil || store.loading || !arrangements.canEditDraft)
                     .accessibilityIdentifier("aist.addToArrangement")
-                Button("导出 A–B 片段", systemImage: "square.and.arrow.up") {
+                Button("导出", systemImage: "square.and.arrow.up") {
                     do { if let url = try store.exportSegment() { exportURL = url; message = "已导出全部连续坐标和来源说明。" } }
                     catch { message = "导出失败：\(error.localizedDescription)" }
-                }.disabled(store.motion == nil)
+                }.disabled(store.motion == nil).help("导出 A–B 连续坐标")
             }
+            .controlSize(.small)
+            .font(.caption)
         }
     }
 

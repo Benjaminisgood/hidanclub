@@ -45,7 +45,7 @@ import SwiftUI
                 let item = AVPlayerItem(asset: asset); item.audioTimePitchAlgorithm = .spectral
                 if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
                 player.replaceCurrentItem(with: item)
-                endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self] _ in
+                endObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main) { [weak self = self] _ in
                     Task { @MainActor in
                         guard let self, self.generation == token else { return }
                         if self.playbackRequested, self.loopEnabled, self.loopEnd - self.loopStart >= 0.25 { self.restartLoop() }

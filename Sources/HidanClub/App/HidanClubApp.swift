@@ -78,6 +78,8 @@ import AppKit
                     }
                 }
         }.defaultSize(width: 1280, height: 850)
+            .windowStyle(.hiddenTitleBar)
+            .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .commands {
                 CommandGroup(replacing: .newItem) {}
                 CommandMenu("练习") {

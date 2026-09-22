@@ -12,6 +12,10 @@ struct MoveLibraryView: View {
     var trainingActive: Bool
     var startPractice: (_ moves: [DanceMove], _ title: String) -> Void
     @AppStorage(CoordinateLayerPreference.key) private var coordinateLayer = "optimized"
+    @AppStorage("aist.visualStyle") private var visualStyle: AISTVisualStyle = .porcelain
+    @AppStorage("aist.skeletonOverlay") private var skeletonOverlay = false
+    @AppStorage("aist.showReferenceGrid") private var showReferenceGrid = false
+    @AppStorage("aist.showJointNames") private var showJointNames = false
     @State private var showingDetail = false
     @State private var comboSeed = 0
     @State private var notice: String?
@@ -72,31 +76,36 @@ struct MoveLibraryView: View {
 
     private var detail: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                Button("全部基础练习", systemImage: "chevron.left") {
-                    motions.pause(); showingDetail = false
-                }.buttonStyle(.plain).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
                 if let error = motions.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
-                Text(motions.title).font(.title2.bold())
-                if motions.moves.count > 1 {
-                    Text(motions.moves.map(\.name).joined(separator: " → "))
-                        .font(.callout).foregroundStyle(.secondary)
-                } else if let move = motions.moves.first {
-                    Text("\(move.englishName) · \(move.style.displayName) · \(move.bpmLabel)")
-                        .font(.callout).foregroundStyle(.secondary)
-                    Text(move.summary)
-                }
-                Text(motions.optimized ? "时序平滑坐标" : "逐帧采样坐标")
-                    .font(.caption.monospaced()).foregroundStyle(.secondary)
-                PracticeMotionStage(player: motions, visualStyle: .porcelain, showJointNames: false,
-                                    showSkeletonOverlay: false, showReferenceGrid: false, transparent: false)
-                    .frame(height: 420)
-                PracticeMotionTransport(player: motions, trainingActive: trainingActive) {
-                    startPractice(motions.moves, motions.title)
+                HStack(spacing: 8) {
+                    Button { motions.pause(); showingDetail = false } label: { Image(systemName: "chevron.left") }
+                        .buttonStyle(.plain).foregroundStyle(.secondary).help("全部基础练习")
+                    Text(motions.title).font(.title3.weight(.semibold)).lineLimit(1)
+                    if motions.moves.count > 1 {
+                        Text(motions.moves.map(\.name).joined(separator: " → "))
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    } else if let move = motions.moves.first {
+                        Text("\(move.style.displayName) · \(move.englishName) · \(move.bpmLabel)")
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                }.controlSize(.small)
+                MotionPlaybackReader(playback: motions.playback) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        MotionStageChrome(
+                            joints: motions.currentJoints, upAxis: "y", mirrored: motions.mirrored,
+                            resetToken: motions.resetCamera, loading: motions.loading,
+                            identity: (motions.moves.first?.id ?? motions.title) + String(motions.optimized),
+                            visualStyle: visualStyle, showJointNames: showJointNames,
+                            showSkeletonOverlay: skeletonOverlay, showReferenceGrid: showReferenceGrid)
+                        practiceTransport
+                    }
                 }
                 if let move = motions.moves.count == 1 ? motions.moves.first : nil {
+                    Text(move.summary)
                     Text("练习提示").font(.headline)
                     ForEach(Array(move.cues.enumerated()), id: \.offset) { index, cue in
                         HStack(alignment: .top, spacing: 14) {
@@ -111,7 +120,37 @@ struct MoveLibraryView: View {
                     }
                 }
                 Text(DanceCatalog.contentNotice).font(.caption).foregroundStyle(.secondary)
-            }.padding(32)
+            }.padding(24)
+        }
+    }
+
+    private var practiceTransport: some View {
+        let frame = motions.playback.frameIndex
+        let count = motions.frameCount
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(String(format: "%.2f / %.2f 秒", Double(frame) / 60, Double(count) / 60)).monospacedDigit()
+                Spacer(minLength: 8)
+                Text("帧 \(frame + 1) / \(count)").monospacedDigit()
+            }.font(.caption2).foregroundStyle(.secondary)
+            Slider(value: Binding(get: { Double(frame) }, set: { motions.pause(); motions.seek(Int($0)) }),
+                   in: 0...Double(max(1, count - 1)), step: 1).controlSize(.small).accessibilityLabel("动作帧")
+            HStack(spacing: 6) {
+                Button { motions.toggle() } label: {
+                    Label(motions.playback.isPlaying ? "暂停" : "播放", systemImage: motions.playback.isPlaying ? "pause.fill" : "play.fill")
+                }.disabled(motions.motion == nil).accessibilityIdentifier("practice.stage.play")
+                Button(trainingActive ? "继续练习" : "开始练习") { startPractice(motions.moves, motions.title) }
+                    .disabled(!trainingActive && (motions.motion == nil || motions.loading))
+                Button("镜像") { motions.mirrored.toggle() }
+                Button("重置视角", systemImage: "arrow.counterclockwise") { motions.resetCamera += 1 }
+                Button { motions.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
+                Button { motions.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
+                Picker("速度", selection: $motions.speed) {
+                    ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
+                }.frame(width: 72)
+            }
+            .controlSize(.small)
+            .font(.caption)
         }
     }
 
@@ -175,40 +214,6 @@ struct PracticeMotionStage: View {
         }
         .background(transparent ? Color.clear : Color(red: 0.055, green: 0.064, blue: 0.095))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-}
-
-private struct PracticeMotionTransport: View {
-    @ObservedObject var player: PracticeMotionStore
-    @ObservedObject private var playback: AISTPlaybackState
-    var trainingActive: Bool
-    var startPractice: () -> Void
-
-    init(player: PracticeMotionStore, trainingActive: Bool, startPractice: @escaping () -> Void) {
-        self.player = player
-        self.playback = player.playback
-        self.trainingActive = trainingActive
-        self.startPractice = startPractice
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Button(action: player.toggle) {
-                    Label(playback.isPlaying ? "暂停动作" : "播放动作", systemImage: playback.isPlaying ? "pause.fill" : "play.fill")
-                }.buttonStyle(.borderedProminent).disabled(player.motion == nil)
-                Button(trainingActive ? "继续练习" : "开始练习", action: startPractice)
-                    .buttonStyle(.borderedProminent).disabled(!trainingActive && (player.motion == nil || player.loading))
-                Spacer()
-                Picker("速度", selection: $player.speed) {
-                    ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                }.frame(width: 110)
-                Toggle("镜像", isOn: $player.mirrored).toggleStyle(.checkbox)
-            }
-            Slider(value: Binding(get: { Double(playback.frameIndex) }, set: { player.pause(); player.seek(Int($0)) }),
-                   in: 0...Double(max(1, player.frameCount - 1)), step: 1)
-                .disabled(player.motion == nil)
-        }
     }
 }
 
