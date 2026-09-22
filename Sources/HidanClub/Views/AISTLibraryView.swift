@@ -17,6 +17,7 @@ struct AISTLibraryView: View {
     @Binding var filters: AISTLibraryFilters
     @Binding var showDetail: Bool
     var openTraining: () -> Void
+    var offerMusicPractice: ((() -> Void)?) -> Void = { _ in }
     var practiceClip: (CapturedMotion) -> Void
     var canPracticeClip: Bool
     @AppStorage(CoordinateLayerPreference.key) private var coordinateLayer = "optimized"
@@ -41,7 +42,7 @@ struct AISTLibraryView: View {
             else if showDetail { detail }
             else { gallery }
         }
-        .onAppear { filter() }
+        .onAppear { filter(); publishMusicPractice() }
         .onChange(of: filters.search) { _, _ in filter() }
         .onChange(of: filters.genre) { _, _ in filter() }
         .onChange(of: filters.category) { _, _ in filter() }
@@ -52,8 +53,18 @@ struct AISTLibraryView: View {
             store.optimized = coordinateLayer != "raw"
             store.switchSource()
         }
-        .onChange(of: showDetail) { _, open in if !open { store.pause() } }
-        .onDisappear { store.pause() }
+        .onChange(of: showDetail) { _, open in
+            if !open { store.pause() }
+            publishMusicPractice()
+        }
+        .onChange(of: store.loading) { _, _ in publishMusicPractice() }
+        .onChange(of: store.motion == nil) { _, _ in publishMusicPractice() }
+        .onChange(of: store.speed) { _, speed in
+            guard music.sourceURL == nil, let bpm = store.selected?.bpm else { return }
+            let locked = min(180, max(40, Double(bpm) * speed))
+            if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+        }
+        .onDisappear { store.pause(); offerMusicPractice(nil) }
         .sheet(isPresented: $showDataInfo) { dataInfo }
         .sheet(isPresented: $showStylePlan) { stylePlan }
     }
@@ -249,18 +260,15 @@ struct AISTLibraryView: View {
                    in: 0...Double(max(1, sequence.frameCount - 1)), step: 1).controlSize(.small).accessibilityLabel("动作帧")
             HStack(spacing: 6) {
                 Button { store.toggle() } label: {
-                    Label(store.isPlaying ? "暂停" : "播放", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
+                    Label(store.isPlaying ? "暂停预览" : "动作预览", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
                 }.disabled(store.motion == nil).accessibilityIdentifier("aist.stage.play")
-                Button("开始练习", action: startPractice)
-                    .disabled(store.motion == nil || store.loading)
-                    .accessibilityIdentifier("aist.startPractice")
                 Button("镜像") { store.mirrored.toggle() }
                 Button("重置视角", systemImage: "arrow.counterclockwise") { store.resetCamera += 1 }
                 Button { store.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
                 Button { store.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
                 Picker("速度", selection: $store.speed) {
                     ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                }.frame(width: 72)
+                }.frame(width: 72).help("动作节拍速度。已导入的音乐仍按自己的播放速度。")
             }
             .controlSize(.small)
             .font(.caption)
@@ -273,7 +281,7 @@ struct AISTLibraryView: View {
                 Toggle("循环", isOn: $store.loopEnabled).toggleStyle(.checkbox)
                 Button("节拍", systemImage: "metronome") {
                     guard let bpm = sequence.bpm else { return }
-                    music.useBeat(); music.bpm = Double(bpm); music.rate = Float(store.speed); music.play()
+                    music.useBeat(); music.bpm = min(180, max(40, Double(bpm) * store.speed)); music.play()
                 }.disabled(sequence.bpm == nil).help("按这段音乐的 BPM 播放原创节拍，尚未对齐第一拍")
                 Button("加入编排", systemImage: "text.badge.plus") {
                     do {
@@ -293,6 +301,14 @@ struct AISTLibraryView: View {
     }
 
     private var practiceRounds: Int { [2, 4, 6].contains(defaultRounds) ? defaultRounds : 4 }
+
+    private func publishMusicPractice() {
+        if showDetail, store.motion != nil, !store.loading {
+            offerMusicPractice(startPractice)
+        } else {
+            offerMusicPractice(nil)
+        }
+    }
 
     private func startPractice() {
         guard store.motion != nil, !store.loading, store.optimized == (coordinateLayer != "raw") else { return }

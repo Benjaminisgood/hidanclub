@@ -9,8 +9,10 @@ struct MoveLibraryFilters {
 struct MoveLibraryView: View {
     @Binding var filters: MoveLibraryFilters
     @ObservedObject var motions: PracticeMotionStore
+    @ObservedObject var music: MusicService
     var trainingActive: Bool
     var startPractice: (_ moves: [DanceMove], _ title: String) -> Void
+    var offerMusicPractice: ((() -> Void)?) -> Void = { _ in }
     @AppStorage(CoordinateLayerPreference.key) private var coordinateLayer = "optimized"
     @AppStorage("aist.visualStyle") private var visualStyle: AISTVisualStyle = .porcelain
     @AppStorage("aist.skeletonOverlay") private var skeletonOverlay = false
@@ -31,11 +33,20 @@ struct MoveLibraryView: View {
             if showingDetail { detail }
             else { gallery }
         }
+        .onAppear { publishMusicPractice() }
         .onChange(of: coordinateLayer) { _, value in
             guard showingDetail, !motions.moves.isEmpty else { return }
             motions.open(motions.moves, title: motions.title, optimized: value != "raw")
         }
-        .onDisappear { if !showingDetail { motions.pause() } }
+        .onChange(of: showingDetail) { _, _ in publishMusicPractice() }
+        .onChange(of: motions.loading) { _, _ in publishMusicPractice() }
+        .onChange(of: motions.motion == nil) { _, _ in publishMusicPractice() }
+        .onChange(of: motions.speed) { _, speed in
+            guard music.sourceURL == nil, let bpm = motions.beatBPM else { return }
+            let locked = min(180, max(40, bpm * speed))
+            if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+        }
+        .onDisappear { if !showingDetail { motions.pause() }; offerMusicPractice(nil) }
     }
 
     private var gallery: some View {
@@ -137,20 +148,26 @@ struct MoveLibraryView: View {
                    in: 0...Double(max(1, count - 1)), step: 1).controlSize(.small).accessibilityLabel("动作帧")
             HStack(spacing: 6) {
                 Button { motions.toggle() } label: {
-                    Label(motions.playback.isPlaying ? "暂停" : "播放", systemImage: motions.playback.isPlaying ? "pause.fill" : "play.fill")
+                    Label(motions.playback.isPlaying ? "暂停预览" : "动作预览", systemImage: motions.playback.isPlaying ? "pause.fill" : "play.fill")
                 }.disabled(motions.motion == nil).accessibilityIdentifier("practice.stage.play")
-                Button("开始练习") { startPractice(motions.moves, motions.title) }
-                    .disabled(motions.motion == nil || motions.loading)
                 Button("镜像") { motions.mirrored.toggle() }
                 Button("重置视角", systemImage: "arrow.counterclockwise") { motions.resetCamera += 1 }
                 Button { motions.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
                 Button { motions.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
                 Picker("速度", selection: $motions.speed) {
                     ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                }.frame(width: 72)
+                }.frame(width: 72).help("动作节拍速度。已导入的音乐仍按自己的播放速度。")
             }
             .controlSize(.small)
             .font(.caption)
+        }
+    }
+
+    private func publishMusicPractice() {
+        if showingDetail, motions.motion != nil, !motions.loading {
+            offerMusicPractice { startPractice(motions.moves, motions.title) }
+        } else {
+            offerMusicPractice(nil)
         }
     }
 

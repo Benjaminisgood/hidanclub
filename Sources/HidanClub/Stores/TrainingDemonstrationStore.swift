@@ -13,6 +13,7 @@ import HidanCore
     private var waitingToResume: AISTPracticeReference?
     private var previewing = false
     private var referenceHeld = false
+    private var playWhenReady = false
     private var synchronizing = false
 
     init(training: TrainingStore, player: AISTLibraryStore? = nil) {
@@ -70,6 +71,12 @@ import HidanCore
             setIssue(nil); return
         }
         setIssue(nil)
+        if playWhenReady {
+            playWhenReady = false
+            previewing = training.clock.state != .running
+            referenceHeld = false
+            if !player.isPlaying { player.play() }
+        }
         if waitingToResume == reference, training.clock.state == .paused {
             waitingToResume = nil; training.resume()
         }
@@ -99,8 +106,14 @@ import HidanCore
         if playing {
             referenceHeld = false
             previewing = training.clock.state != .running
-            if !player.isPlaying { player.play() }
+            if player.motion == nil || player.loading {
+                playWhenReady = true
+            } else {
+                playWhenReady = false
+                if !player.isPlaying { player.play() }
+            }
         } else {
+            playWhenReady = false
             previewing = false
             referenceHeld = true
             if player.isPlaying { player.pause() }

@@ -20,6 +20,11 @@ struct MusicBar: View {
     /// During practice this one button starts and stops the reference motion together with the music.
     var onPlayToggle: (() -> Void)? = nil
     @State private var importing = false
+    private var musicCaption: String {
+        if onPlayToggle != nil, music.sourceURL == nil { return "与练习同一节拍 · \(Int(music.bpm)) BPM" }
+        if music.sourceURL == nil { return "8 拍循环 · \(Int(music.bpm)) BPM" }
+        return onPlayToggle == nil ? "本地音频 · 保持音调变速" : "与练习同一速度"
+    }
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 16) {
@@ -29,7 +34,7 @@ struct MusicBar: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(music.trackName).font(.system(size: 12, weight: .semibold)).lineLimit(1)
-                    Text(music.sourceURL == nil ? "8 拍循环 · \(Int(music.bpm)) BPM" : "本地音频 · 保持音调变速").font(.caption2).foregroundStyle(.secondary)
+                    Text(musicCaption).font(.caption2).foregroundStyle(.secondary)
                 }.frame(width: 195, alignment: .leading)
                 CircularPlayButton(playing: music.isPlaying, help: onPlayToggle == nil ? "播放或暂停音乐" : "播放或暂停动作和音乐", action: onPlayToggle ?? music.toggle)
                 if music.sourceURL == nil {

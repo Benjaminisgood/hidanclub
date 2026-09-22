@@ -37,6 +37,7 @@ struct ContentView: View {
     @State private var showMotionDetail = false
     @State private var aistFilters = AISTLibraryFilters()
     @State private var practiceFilters = MoveLibraryFilters()
+    @State private var musicPractice: (() -> Void)?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var practiceFullscreen = false
     @State private var sidebarBeforeFullscreen: NavigationSplitViewVisibility?
@@ -75,12 +76,12 @@ struct ContentView: View {
                         case .library:
                             AISTLibraryView(store: aist, training: training, music: music, arrangements: arrangements, clips: published,
                                             filters: $aistFilters, showDetail: $showMotionDetail,
-                                            openTraining: { beginPractice(.aist) }, practiceClip: practiceCaptured,
-                                            canPracticeClip: !training.active)
+                                            openTraining: { beginPractice(.aist) }, offerMusicPractice: { musicPractice = $0 },
+                                            practiceClip: practiceCaptured, canPracticeClip: !training.active)
                         case .basics:
-                            MoveLibraryView(filters: $practiceFilters, motions: practiceMotions, trainingActive: training.active) { moves, title in
+                            MoveLibraryView(filters: $practiceFilters, motions: practiceMotions, music: music, trainingActive: training.active, startPractice: { moves, title in
                                 practiceGenerated(moves, title: title)
-                            }
+                            }, offerMusicPractice: { musicPractice = $0 })
                         case .video:
                             VideoLibraryView(library: videoLibrary, video: video, captured: captured, published: published,
                                              onRecord: recordPractice, onPractice: {
@@ -112,7 +113,7 @@ struct ContentView: View {
                         if training.canRetrySaving { Button("重试保存") { training.retrySaving() } }
                     }.padding(10).frame(maxWidth: .infinity, alignment: .leading).background(.red.opacity(0.06))
                 }
-                MusicBar(music: music, onPlayToggle: practicing && trainingSource != .none ? { togglePracticePlayback() } : nil)
+                MusicBar(music: music, onPlayToggle: musicPlayAction)
             }.background(ClubTheme.accent.opacity(0.025))
         }
         .toolbar(.hidden, for: .windowToolbar)
@@ -160,14 +161,46 @@ struct ContentView: View {
         if practiceFullscreen { practiceFullscreen = false }
     }
 
+    private var musicPlayAction: (() -> Void)? {
+        if practicing && trainingSource != .none { return togglePracticePlayback }
+        if musicPractice != nil { return startPracticeFromMusic }
+        return nil
+    }
+
+    private func startPracticeFromMusic() {
+        musicPractice?()
+        guard practicing else { return }
+        if music.isPlaying {
+            setPracticeMotion(playing: true)
+        } else {
+            if !music.isPaused { alignPracticeDownbeat() }
+            music.play()
+            setPracticeMotion(playing: music.isPlaying)
+        }
+    }
+
     private func togglePracticePlayback() {
         if music.isPlaying {
             music.pause()
             setPracticeMotion(playing: false)
         } else {
+            if !music.isPaused { alignPracticeDownbeat() }
             music.play()
             setPracticeMotion(playing: music.isPlaying)
         }
+    }
+
+    /// A fresh play starts the motion and the beat on the same downbeat.
+    private func alignPracticeDownbeat() {
+        switch trainingSource {
+        case .aist:
+            demonstration.player.seek(demonstration.player.loopStart)
+        case .generated:
+            practiceMotions.seek(0)
+        case .captured, .none:
+            break
+        }
+        if music.sourceURL == nil { music.stop() }
     }
 
     private func setPracticeMotion(playing: Bool) {

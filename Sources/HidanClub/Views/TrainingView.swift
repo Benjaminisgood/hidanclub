@@ -27,6 +27,7 @@ struct TrainingView: View {
     @State private var overlayOffset = CGSize.zero
     @State private var dragStart = CGSize.zero
     @State private var showPlan = false
+    @State private var lockingTempo = false
     @AppStorage("aist.visualStyle") private var visualStyle: AISTVisualStyle = .porcelain
 
     var body: some View {
@@ -65,9 +66,13 @@ struct TrainingView: View {
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onAppear {
+            shareBeat()
             guard cameraOnByDefault, displayMode != .demonstration, !camera.isRunning, !camera.isBusy else { return }
             camera.start()
         }
+        .onChange(of: demonstration.reference?.sequence.bpm) { _, _ in shareBeat() }
+        .onChange(of: practice.beatBPM) { _, _ in if source == .generated { shareBeat() } }
+        .onChange(of: music.bpm) { _, _ in followSharedBeat() }
         .onDisappear {
             demonstration.pause(); captured.pause(); practice.pause(); camera.stop(); music.pause()
         }
@@ -243,7 +248,70 @@ struct TrainingView: View {
     }
     private func primaryAction() {
         if store.clock.state == .running { demonstration.pause(); music.pause() }
-        else if demonstration.startOrResume(), !store.isCustomPlan { music.play() }
+        else {
+            if !music.isPaused { alignPracticeDownbeat() }
+            if demonstration.startOrResume() {
+                music.play()
+                if music.isPlaying { demonstration.setReferencePlaying(true) }
+            }
+        }
+    }
+
+    /// The motion's recorded tempo and the metronome are one clock: BPM × playback speed.
+    private func shareBeat() {
+        guard !lockingTempo, let sourceBPM = sharedSourceBPM, sourceBPM > 0 else { return }
+        lockingTempo = true
+        guard music.sourceURL == nil else { lockingTempo = false; return }
+        let locked = min(180, max(40, sourceBPM * motionSpeed))
+        music.bpm = locked
+        setMotionSpeed(min(1, max(0.25, locked / sourceBPM)))
+        lockingTempo = false
+    }
+
+    private func followSharedBeat() {
+        guard !lockingTempo, music.sourceURL == nil, let sourceBPM = sharedSourceBPM, sourceBPM > 0 else { return }
+        let speed = min(1, max(0.25, music.bpm / sourceBPM))
+        lockingTempo = true
+        setMotionSpeed(speed)
+        let locked = min(180, max(40, sourceBPM * speed))
+        if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+        lockingTempo = false
+    }
+
+    private func alignPracticeDownbeat() {
+        guard !music.isPlaying, !music.isPaused else { return }
+        switch source {
+        case .aist: demonstration.player.seek(demonstration.player.loopStart)
+        case .generated: practice.seek(0)
+        case .captured, .none: break
+        }
+        if music.sourceURL == nil { music.stop() }
+    }
+
+    private var sharedSourceBPM: Double? {
+        switch source {
+        case .aist: return demonstration.reference?.sequence.bpm.map(Double.init) ?? demonstration.player.selected?.bpm.map(Double.init)
+        case .generated: return practice.beatBPM
+        case .captured, .none: return nil
+        }
+    }
+
+    private var motionSpeed: Double {
+        switch source {
+        case .aist: return demonstration.player.speed
+        case .generated: return practice.speed
+        case .captured: return captured.playback.speed
+        case .none: return 1
+        }
+    }
+
+    private func setMotionSpeed(_ speed: Double) {
+        switch source {
+        case .aist: demonstration.player.speed = speed
+        case .generated: practice.speed = speed
+        case .captured: captured.playback.speed = speed
+        case .none: break
+        }
     }
     private var planList: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -308,9 +376,6 @@ private struct TrainingAISTTransport: View {
     }
     var body: some View {
         HStack(spacing: 9) {
-            Picker("速度", selection: $player.speed) {
-                Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
-            }.labelsHidden().frame(width: 72)
             Button("镜像") { player.mirrored.toggle() }.help("镜像示范")
             Button { player.resetCamera += 1 } label: { Image(systemName: "arrow.counterclockwise") }.help("重置示范视角")
         }.controlSize(.small).font(.caption)
@@ -347,9 +412,6 @@ private struct GeneratedSessionControls: View {
                     Button("下一段") { training.advance(); if !training.active { practice.pause() } }
                     Button("结束") { training.stop(); practice.pause(); music.pause() }
                 }
-                Picker("速度", selection: $practice.speed) {
-                    Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
-                }.labelsHidden().frame(width: 72)
                 Button("镜像") { practice.mirrored.toggle() }.help("镜像示范")
                 Button { practice.resetCamera += 1 } label: { Image(systemName: "arrow.counterclockwise") }.help("重置示范视角")
                 Spacer(minLength: 0)

@@ -11,6 +11,8 @@ import HidanCore
     @Published private(set) var motion: AISTMotion?
     @Published private(set) var optimized = true
     @Published private(set) var loading = false
+    /// Midpoint tempo of the clip now on screen. Playback at 1× matches this BPM.
+    @Published private(set) var beatBPM: Double?
     @Published var speed: Double = 1 {
         didSet {
             let valid = speed.isFinite ? min(1, max(0.25, speed)) : 1
@@ -68,6 +70,7 @@ import HidanCore
         self.title = title
         self.optimized = optimized
         moves = playable
+        beatBPM = Self.tempo(of: first)
         load(first, resume: false)
     }
 
@@ -99,6 +102,7 @@ import HidanCore
             do {
                 let loaded = try await Task.detached { try PracticeMotionLibrary.load(in: directory, id: id, optimized: optimized) }.value
                 guard playlist.indices.contains(playlistIndex), playlist[playlistIndex].id == id else { return }
+                beatBPM = Self.tempo(of: move)
                 motion = loaded
                 loading = false
                 errorMessage = nil
@@ -131,5 +135,9 @@ import HidanCore
         } else {
             playback.frameIndex += 1
         }
+    }
+
+    private static func tempo(of move: DanceMove) -> Double {
+        Double(move.bpmMin + move.bpmMax) / 2
     }
 }
