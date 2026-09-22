@@ -91,6 +91,7 @@ struct ContentView: View {
                         case .sequence:
                             SequenceView(arrangements: arrangements, onPracticeAIST: { references, name in
                                 do {
+                                    if training.active { demonstration.stop() }
                                     try training.prepareArrangement(references: references, name: name)
                                     beginPractice(.aist)
                                 } catch { arrangements.errorMessage = error.localizedDescription }
@@ -151,7 +152,10 @@ struct ContentView: View {
     }
 
     private func leavePractice() {
+        demonstration.stop()
         practiceMotions.pause()
+        captured.pause()
+        aist.pause()
         practicing = false
         if practiceFullscreen { practiceFullscreen = false }
     }
@@ -168,7 +172,7 @@ struct ContentView: View {
     }
 
     private func practiceGenerated(_ moves: [DanceMove], title: String) {
-        guard !training.active else { return }
+        if training.active { demonstration.stop() }
         let stored = UserDefaults.standard.object(forKey: "training.defaultRounds") as? Int ?? 4
         let rounds = [2, 4, 6].contains(stored) ? stored : 4
         do {
@@ -181,7 +185,7 @@ struct ContentView: View {
     }
 
     private func practiceCaptured(_ model: CapturedMotion) {
-        guard !training.active else { published.errorMessage = "先结束当前练习，再切换编排。"; return }
+        if training.active { demonstration.stop() }
         video.pause(); demonstration.pause(); aist.pause(); captured.pause()
         captured.select(model)
         beginPractice(.captured)

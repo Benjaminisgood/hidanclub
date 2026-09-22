@@ -139,8 +139,8 @@ struct MoveLibraryView: View {
                 Button { motions.toggle() } label: {
                     Label(motions.playback.isPlaying ? "暂停" : "播放", systemImage: motions.playback.isPlaying ? "pause.fill" : "play.fill")
                 }.disabled(motions.motion == nil).accessibilityIdentifier("practice.stage.play")
-                Button(trainingActive ? "继续练习" : "开始练习") { startPractice(motions.moves, motions.title) }
-                    .disabled(!trainingActive && (motions.motion == nil || motions.loading))
+                Button("开始练习") { startPractice(motions.moves, motions.title) }
+                    .disabled(motions.motion == nil || motions.loading)
                 Button("镜像") { motions.mirrored.toggle() }
                 Button("重置视角", systemImage: "arrow.counterclockwise") { motions.resetCamera += 1 }
                 Button { motions.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")

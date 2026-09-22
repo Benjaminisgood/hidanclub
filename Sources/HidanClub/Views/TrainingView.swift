@@ -32,25 +32,33 @@ struct TrainingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
-            trainingSurface.frame(maxWidth: .infinity, maxHeight: .infinity)
-            if source == .aist { sessionControls }
-            else if source == .generated { GeneratedSessionControls(training: store, practice: practice) }
-            else if source == .captured { capturedControls }
-            else { freePracticeControls }
-            if displayMode == .overlay { overlayAdjustments.controlSize(.small) }
-            if displayMode != .demonstration { LivePoseCameraControls(camera: camera, compact: true) }
-            if source == .aist, let issue = demonstration.issue ?? store.demonstrationError {
-                HStack {
-                    Label(issue, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).lineLimit(1)
-                    Spacer()
-                    Button("重新载入") { demonstration.reload() }.controlSize(.small)
+            trainingSurface
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minHeight: 320)
+                .layoutPriority(1)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    if source == .aist { sessionControls }
+                    else if source == .generated { GeneratedSessionControls(training: store, practice: practice) }
+                    else if source == .captured { capturedControls }
+                    else { freePracticeControls }
+                    if displayMode == .overlay { overlayAdjustments.controlSize(.small) }
+                    if displayMode != .demonstration { LivePoseCameraControls(camera: camera, compact: true) }
+                    if source == .aist, let issue = demonstration.issue ?? store.demonstrationError {
+                        HStack {
+                            Label(issue, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).lineLimit(1)
+                            Spacer()
+                            Button("重新载入") { demonstration.reload() }.controlSize(.small)
+                        }
+                    }
+                    if source == .aist || source == .generated {
+                        DisclosureGroup("训练计划 · \(store.plan.blocks.count) 段 · \(clockText(Double(store.plan.totalSeconds)))", isExpanded: $showPlan) {
+                            planList.padding(.top, 8)
+                        }.font(.caption)
+                    }
                 }
             }
-            if source == .aist || source == .generated {
-                DisclosureGroup("训练计划 · \(store.plan.blocks.count) 段 · \(clockText(Double(store.plan.totalSeconds)))", isExpanded: $showPlan) {
-                    planList.padding(.top, 8)
-                }.font(.caption)
-            }
+            .frame(maxHeight: showPlan ? 220 : 132)
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

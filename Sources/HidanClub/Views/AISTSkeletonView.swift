@@ -72,6 +72,7 @@ struct AISTSkeletonView: NSViewRepresentable {
         private var displayedPoints: [SIMD3<Float>?] = []
         private var pendingCameraReset = true
         private var pendingInitialLayout = true
+        private var framedSize = CGSize.zero
         private var sceneIsInstalled = false
         private var previousStyle: AISTVisualStyle?
         private var previousGrid: Bool?
@@ -120,13 +121,18 @@ struct AISTSkeletonView: NSViewRepresentable {
             view.rendersContinuously = false
             view.setAccessibilityLabel("三维骨架，绿色为左侧，紫色为右侧。拖动旋转，滚动缩放。地面为显示参考网格。")
             (view as? SkeletonSceneView)?.didLayout = { [weak self, weak view] in
-                guard let self, let view, self.pendingInitialLayout,
-                      view.bounds.width > 0, view.bounds.height > 0,
+                guard let self, let view,
+                      view.bounds.width > 40, view.bounds.height > 40,
                       self.displayedPoints.contains(where: { $0 != nil }) else { return }
+                let size = view.bounds.size
+                let resized = abs(size.width - self.framedSize.width) > 24 || abs(size.height - self.framedSize.height) > 24
+                guard self.pendingInitialLayout || resized else { return }
                 self.withoutAnimation {
                     self.frameCamera(in: view)
                 }
+                self.framedSize = size
                 self.pendingInitialLayout = false
+                self.pendingCameraReset = false
             }
         }
 
@@ -222,10 +228,12 @@ struct AISTSkeletonView: NSViewRepresentable {
                     node.geometry?.firstMaterial?.readsFromDepthBuffer = style == .skeleton
                     node.geometry?.firstMaterial?.writesToDepthBuffer = style == .skeleton
                 }
-                if pendingCameraReset, displayedPoints.contains(where: { $0 != nil }) {
+                if pendingCameraReset, displayedPoints.contains(where: { $0 != nil }),
+                   view.bounds.width > 40, view.bounds.height > 40 {
                     frameCamera(in: view)
                     pendingCameraReset = false
-                    if view.bounds.width > 0, view.bounds.height > 0 { pendingInitialLayout = false }
+                    pendingInitialLayout = false
+                    framedSize = view.bounds.size
                 }
             }
             view.needsDisplay = true

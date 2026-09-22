@@ -251,8 +251,8 @@ struct AISTLibraryView: View {
                 Button { store.toggle() } label: {
                     Label(store.isPlaying ? "暂停" : "播放", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
                 }.disabled(store.motion == nil).accessibilityIdentifier("aist.stage.play")
-                Button(training.active ? "继续练习" : "开始练习", action: startPractice)
-                    .disabled(!training.active && (store.motion == nil || store.loading))
+                Button("开始练习", action: startPractice)
+                    .disabled(store.motion == nil || store.loading)
                     .accessibilityIdentifier("aist.startPractice")
                 Button("镜像") { store.mirrored.toggle() }
                 Button("重置视角", systemImage: "arrow.counterclockwise") { store.resetCamera += 1 }
@@ -295,8 +295,8 @@ struct AISTLibraryView: View {
     private var practiceRounds: Int { [2, 4, 6].contains(defaultRounds) ? defaultRounds : 4 }
 
     private func startPractice() {
-        if training.active { openTraining(); return }
         guard store.motion != nil, !store.loading, store.optimized == (coordinateLayer != "raw") else { return }
+        if training.active { training.stop() }
         do {
             try training.prepareReference(store.practiceReference(), rounds: practiceRounds)
             openTraining()
