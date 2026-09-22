@@ -12,6 +12,7 @@ import HidanCore
     private var catalogKey: String?
     private var waitingToResume: AISTPracticeReference?
     private var previewing = false
+    private var referenceHeld = false
     private var synchronizing = false
 
     init(training: TrainingStore, player: AISTLibraryStore? = nil) {
@@ -41,12 +42,12 @@ import HidanCore
         synchronizing = true
         defer { synchronizing = false; objectWillChange.send() }
         if training.usesGeneratedDemonstration {
-            player.pause(); previewing = false; waitingToResume = nil; setIssue(nil); return
+            player.pause(); previewing = false; referenceHeld = false; waitingToResume = nil; setIssue(nil); return
         }
         installCatalogIfNeeded()
         let target = targetReference()
         if target != reference {
-            previewing = false; waitingToResume = nil; player.pause()
+            previewing = false; referenceHeld = false; waitingToResume = nil; player.pause()
             reference = target
             if let target { player.restoreReference(target) }
         }
@@ -72,31 +73,41 @@ import HidanCore
         if waitingToResume == reference, training.clock.state == .paused {
             waitingToResume = nil; training.resume()
         }
-        let shouldPlay = training.clock.state == .running || previewing
+        let shouldPlay = !referenceHeld && (training.clock.state == .running || previewing)
         if shouldPlay && !player.isPlaying { player.play() }
         if !shouldPlay && player.isPlaying { player.pause() }
     }
 
     @discardableResult func startOrResume() -> Bool {
-        previewing = false; synchronize()
+        referenceHeld = false; previewing = false; synchronize()
         guard isReady else { setIssue(issue ?? "等待动作示范载入后即可开始。"); return false }
         if training.clock.state == .paused { training.resume() } else { training.start() }
         synchronize(); return training.clock.state == .running
     }
-    func pause() { waitingToResume = nil; previewing = false; training.pause(); player.pause(); synchronize() }
+    func pause() { waitingToResume = nil; previewing = false; referenceHeld = false; training.pause(); player.pause(); synchronize() }
     func advance() {
         // A quick second skip during loading retains the user's running intent;
         // an explicit pause still cancels it through pause().
         let intendedRunning = training.clock.state == .running || waitingToResume != nil
-        waitingToResume = nil; previewing = false; training.advance()
+        waitingToResume = nil; previewing = false; referenceHeld = false; training.advance()
         if intendedRunning && training.clock.state == .paused { training.resume() }
         synchronize()
     }
-    func stop() { waitingToResume = nil; previewing = false; training.stop(); player.pause(); synchronize() }
-    func togglePreview() {
-        guard training.clock.state != .running, isReady else { return }
-        previewing.toggle(); synchronize()
+    func stop() { waitingToResume = nil; previewing = false; referenceHeld = false; training.stop(); player.pause(); synchronize() }
+    func setReferencePlaying(_ playing: Bool) {
+        guard player.motion != nil else { return }
+        if playing {
+            referenceHeld = false
+            previewing = training.clock.state != .running
+            if !player.isPlaying { player.play() }
+        } else {
+            previewing = false
+            referenceHeld = true
+            if player.isPlaying { player.pause() }
+        }
     }
+    func toggleReferencePlayback() { setReferencePlaying(!player.isPlaying) }
+    func togglePreview() { toggleReferencePlayback() }
     func reload() {
         pause(); catalogKey = nil; reference = nil; player.reload()
     }

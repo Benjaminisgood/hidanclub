@@ -1,8 +1,24 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+struct CircularPlayButton: View {
+    var playing: Bool
+    var help: String
+    var action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: playing ? "pause.fill" : "play.fill").frame(width: 24, height: 24)
+        }
+        .buttonStyle(.borderedProminent)
+        .clipShape(Circle())
+        .help(help)
+    }
+}
+
 struct MusicBar: View {
     @ObservedObject var music: MusicService
+    /// During practice this one button starts and stops the reference motion together with the music.
+    var onPlayToggle: (() -> Void)? = nil
     @State private var importing = false
     var body: some View {
         VStack(spacing: 8) {
@@ -15,9 +31,7 @@ struct MusicBar: View {
                     Text(music.trackName).font(.system(size: 12, weight: .semibold)).lineLimit(1)
                     Text(music.sourceURL == nil ? "8 拍循环 · \(Int(music.bpm)) BPM" : "本地音频 · 保持音调变速").font(.caption2).foregroundStyle(.secondary)
                 }.frame(width: 195, alignment: .leading)
-                Button(action: music.toggle) {
-                    Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").frame(width: 24, height: 24)
-                }.buttonStyle(.borderedProminent).clipShape(Circle()).help("独立播放 / 暂停音乐")
+                CircularPlayButton(playing: music.isPlaying, help: onPlayToggle == nil ? "播放或暂停音乐" : "播放或暂停动作和音乐", action: onPlayToggle ?? music.toggle)
                 if music.sourceURL == nil {
                     Slider(value: $music.bpm, in: 40...180, step: 1).frame(minWidth: 80, maxWidth: 145)
                     Text("\(Int(music.bpm)) BPM").font(.caption.monospacedDigit()).frame(width: 64)

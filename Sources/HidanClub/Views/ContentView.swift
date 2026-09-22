@@ -112,7 +112,7 @@ struct ContentView: View {
                         if training.canRetrySaving { Button("重试保存") { training.retrySaving() } }
                     }.padding(10).frame(maxWidth: .infinity, alignment: .leading).background(.red.opacity(0.06))
                 }
-                if !practiceFullscreen { MusicBar(music: music) }
+                MusicBar(music: music, onPlayToggle: practicing && trainingSource != .none ? { togglePracticePlayback() } : nil)
             }.background(ClubTheme.accent.opacity(0.025))
         }
         .toolbar(.hidden, for: .windowToolbar)
@@ -158,6 +158,29 @@ struct ContentView: View {
         aist.pause()
         practicing = false
         if practiceFullscreen { practiceFullscreen = false }
+    }
+
+    private func togglePracticePlayback() {
+        if music.isPlaying {
+            music.pause()
+            setPracticeMotion(playing: false)
+        } else {
+            music.play()
+            setPracticeMotion(playing: music.isPlaying)
+        }
+    }
+
+    private func setPracticeMotion(playing: Bool) {
+        switch trainingSource {
+        case .aist:
+            demonstration.setReferencePlaying(playing)
+        case .generated:
+            if playing { practiceMotions.play() } else { practiceMotions.pause() }
+        case .captured:
+            if playing { captured.playback.play() } else { captured.playback.pause() }
+        case .none:
+            break
+        }
     }
 
     private func beginPractice(_ source: TrainingSource) {

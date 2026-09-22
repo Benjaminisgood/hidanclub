@@ -39,7 +39,7 @@ struct TrainingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     if source == .aist { sessionControls }
-                    else if source == .generated { GeneratedSessionControls(training: store, practice: practice) }
+                    else if source == .generated { GeneratedSessionControls(training: store, practice: practice, music: music) }
                     else if source == .captured { capturedControls }
                     else { freePracticeControls }
                     if displayMode == .overlay { overlayAdjustments.controlSize(.small) }
@@ -161,11 +161,11 @@ struct TrainingView: View {
     }
     private var stagePanel: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 8) {
                 Label(source == .aist ? (demonstration.reference?.name ?? "动作示范") : source == .captured ? (captured.selected?.name ?? "动作编排") : source == .generated ? (practice.title.isEmpty ? "基础练习" : practice.title) : "动作示范", systemImage: "figure.dance")
                     .font(.callout.weight(.semibold)).lineLimit(1)
-                Spacer(minLength: 0)
-                if source == .aist { Text(demonstration.stageLabel).font(.caption2).foregroundStyle(.secondary) }
+                Spacer(minLength: 8)
+                if source == .aist { Text(demonstration.stageLabel).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
             }
             demonstrationSurface(transparent: false)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -308,9 +308,6 @@ private struct TrainingAISTTransport: View {
     }
     var body: some View {
         HStack(spacing: 9) {
-            if !demonstration.training.active {
-                Button(playback.isPlaying ? "暂停预览" : "预览动作") { demonstration.togglePreview() }.disabled(!demonstration.isReady)
-            }
             Picker("速度", selection: $player.speed) {
                 Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
             }.labelsHidden().frame(width: 72)
@@ -323,11 +320,13 @@ private struct TrainingAISTTransport: View {
 private struct GeneratedSessionControls: View {
     @ObservedObject var training: TrainingStore
     @ObservedObject var practice: PracticeMotionStore
+    @ObservedObject var music: MusicService
     @ObservedObject private var playback: AISTPlaybackState
 
-    init(training: TrainingStore, practice: PracticeMotionStore) {
+    init(training: TrainingStore, practice: PracticeMotionStore, music: MusicService) {
         self.training = training
         self.practice = practice
+        self.music = music
         self.playback = practice.playback
     }
 
@@ -346,10 +345,7 @@ private struct GeneratedSessionControls: View {
                 }.disabled(practice.motion == nil && training.clock.state != .running)
                 if training.active {
                     Button("下一段") { training.advance(); if !training.active { practice.pause() } }
-                    Button("结束") { training.stop(); practice.pause() }
-                }
-                if !training.active {
-                    Button(playback.isPlaying ? "暂停预览" : "预览") { practice.toggle() }.disabled(practice.motion == nil)
+                    Button("结束") { training.stop(); practice.pause(); music.pause() }
                 }
                 Picker("速度", selection: $practice.speed) {
                     Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
@@ -365,9 +361,9 @@ private struct GeneratedSessionControls: View {
     }
 
     private func primary() {
-        if training.clock.state == .running { training.pause(); practice.pause() }
-        else if training.clock.state == .paused { training.resume(); practice.play() }
-        else { training.start(); practice.play() }
+        if training.clock.state == .running { training.pause(); practice.pause(); music.pause() }
+        else if training.clock.state == .paused { training.resume(); music.play(); if music.isPlaying { practice.play() } }
+        else { training.start(); music.play(); if music.isPlaying { practice.play() } }
     }
 }
 
