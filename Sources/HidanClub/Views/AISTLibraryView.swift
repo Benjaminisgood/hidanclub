@@ -28,6 +28,7 @@ struct AISTLibraryView: View {
     @State private var exportURL: URL?
     @State private var showStylePlan = false
     @State private var openedClipID: UUID?
+    @State private var importNotice: String?
     @State private var planStyle: DanceStyle = .hipHop
     @State private var planMinutes = 20
     @State private var planLevel = 1
@@ -79,15 +80,26 @@ struct AISTLibraryView: View {
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
+                LibraryImportButton(title: "导入 JSON…", destination: .actions, store: clips, notice: $importNotice) { results in
+                    // Reveal what was just published instead of leaving it hidden
+                    // behind a category that does not list 我的动作.
+                    if results.contains(where: \.succeeded), !showsMine { filters.category = "mine" }
+                }
+                .help("从动作模型 JSON 文件导入到「我的动作」")
                 Button("风格练习…") {
                     planStyle = training.style; planMinutes = training.minutes; planLevel = training.level
                     showStylePlan = true
                 }.disabled(training.active)
             }
             filterBar
+            LibraryImportStatus(store: clips, notice: importNotice)
             if showsMine, !visibleClips.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("我的").font(.headline)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("我的").font(.headline)
+                        Text("视频截取或从 JSON 导入 · \(visibleClips.count) 条")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 16)], spacing: 16) {
                         ForEach(visibleClips) { model in clipCard(model) }
                     }
@@ -100,7 +112,7 @@ struct AISTLibraryView: View {
                 Button("选择数据文件夹") { store.chooseDirectory() }
             }
             if filters.category == "mine" && visibleClips.isEmpty && !clips.isLoading {
-                ContentUnavailableView("我的动作还是空的", systemImage: "person.crop.rectangle", description: Text("在视频库里截出一段，就会出现在这里。"))
+                ContentUnavailableView("我的动作还是空的", systemImage: "person.crop.rectangle", description: Text("在视频库里截出一段，或用「导入 JSON…」导入动作模型文件，就会出现在这里。"))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if filters.category != "mine" && store.manifest == nil && store.loading {
                 ProgressView("正在读取动作库…").frame(maxWidth: .infinity, maxHeight: .infinity)

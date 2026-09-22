@@ -7,6 +7,7 @@ cd "$HIDAN_LIBRARY_ROOT"
 swiftc -swift-version 5 -target "$(uname -m)-apple-macosx14.0" \
   Sources/HidanClub/Services/PoseAnalyzer.swift \
   Sources/HidanClub/Models/CapturedMotion.swift \
+  Sources/HidanClub/Models/CapturedMotionImport.swift \
   Sources/HidanClub/Models/PoseArrangementPlanner.swift \
   Sources/HidanClub/Stores/CapturedMotionPlayback.swift \
   Sources/HidanClub/Stores/CapturedMotionStore.swift \

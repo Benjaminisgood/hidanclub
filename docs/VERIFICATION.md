@@ -1,3 +1,12 @@
+## 2026-09-22 动作库与编排库文件导入 · 0.4
+
+- 新增 `CapturedMotionImport`：读取完整二维动作模型导出或裸识别报告，参考日期数字与 ISO 8601 均可；宽容仅限派生元数据（重算 decoded/detected/coverage、推得 duration、以 1e7 时基重建整数 PTS），坐标、置信度、帧顺序与原始 PTS 从不改写，不一致即按帧号拒绝。每次修正写入导入提示与副本 `arrangementMethod`。
+- `CapturedLibraryStore.importFiles` 逐文件解码并发布独立副本：动作库使用文件自带片段范围，编排库保留全部片段顺序与重复次数；重复导入同一文件会提示已有副本数量并仍存新副本。动作库页新增「导入 JSON…」，编排库页新增「导入编排 JSON…」与「视频动作编排」列表（含缩略图、片段明细、来源说明与「练习这套」）。
+- `script/qa_library_import.sh` 以真实导出 `center-dancer.hidanclub.json`（750 帧、601 检测、597 可用、片段 0–629、21.00 秒）通过：逐帧 timestamp/timestampValue/timescale/bodyCount/ambiguous 与全部 19 关节坐标和置信度与文件逐位相等；动作副本范围 0–629、编排保留片段名与重复；重启重载、重复导入提示、13 个副本全部重载校验；无/空 segments、裸报告、ISO 8601、重算元数据、重建 PTS 均可导入；schema=2、片段越界、重复 99、PTS 不一致、无骨架、无帧、无时间戳、垃圾、空文件、无关 JSON、缺 confidence 均按名拒绝且不写库；混合批次只发布有效文件；源文件 SHA-256 前后一致。
+- `script/qa_library_import_ui.sh` 用生产导入路径填充隔离库后离屏渲染生产视图：编排库「视频动作编排」卡片、动作库播放器（1/750、PTS 0/44,100、0.00/21.00 秒）、导入按钮与状态行、动作库缩略卡片，PNG 存于 `output/qa-library-import/` 并已逐张查看。未开启窗口、未模拟点击、未触碰用户真实库。
+- 回归：`test.sh`、`qa_video_motion_library.sh`、`qa_captured_motion.sh`、`qa_pose_arrangement.sh`、`qa_store.sh`、`qa_video_library.sh` 全部通过；最终 `swift build` 通过。未声称 XCTest 通过。
+- 限制：导入不校验动作质量，也不做舞步命名；没有删除已导入副本的界面，重复导入会产生并列副本（导入提示会说明）。离屏渲染不覆盖 ScrollView 页面整体，页面级视觉仍需在真实窗口确认。
+
 ## 2026-09-09 视频库与智能编排 · 0.4
 
 - 侧栏「视频捕捉」改为「视频库」，导入视频保留原文件的完整副本，支持重新播放、逐帧肢体识别、模型保存及发布到动作库／编排库。动作提示并入动作库的「基础练习」；3D 目录顶部统计头已移除，数据与来源仍可从目录右键菜单打开。

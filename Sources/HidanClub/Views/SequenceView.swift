@@ -3,7 +3,11 @@ import HidanCore
 
 struct SequenceView: View {
     @ObservedObject var arrangements: AISTArrangementStore
+    @ObservedObject var published: CapturedLibraryStore
     var onPracticeAIST: ([AISTPracticeReference], String) -> Void
+    var practiceClip: (CapturedMotion) -> Void
+    var canPracticeClip: Bool
+    @State private var importNotice: String?
 
     var body: some View {
         ScrollView {
@@ -16,12 +20,17 @@ struct SequenceView: View {
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     Spacer()
+                    LibraryImportButton(title: "导入编排 JSON…", destination: .arrangements,
+                                        store: published, notice: $importNotice)
+                        .help("从动作模型 JSON 文件导入一整套编排，保留片段顺序和重复次数")
                 }
                 draftEditor
                 if let error = arrangements.errorMessage {
                     Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).textSelection(.enabled)
                 }
                 savedArrangements
+                CapturedArrangementSection(published: published, notice: $importNotice,
+                                           practiceClip: practiceClip, canPracticeClip: canPracticeClip)
             }.padding(26)
         }
     }
@@ -114,4 +123,76 @@ struct SequenceView: View {
     private func perform(_ action: () throws -> Void) {
         do { try action() } catch { arrangements.errorMessage = error.localizedDescription }
     }
+}
+
+/// Published 2D arrangements: imported from JSON files or sent here from the
+/// video library. Each entry is an independent copy of a complete model, so it
+/// keeps every original frame, segment order and repetition. Kept as its own
+/// view so the section can be reviewed without the page's scroll container.
+struct CapturedArrangementSection: View {
+    @ObservedObject var published: CapturedLibraryStore
+    @Binding var notice: String?
+    var practiceClip: (CapturedMotion) -> Void
+    var canPracticeClip: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("视频动作编排 · \(published.arrangements.count)").font(.title3.weight(.semibold))
+                Spacer()
+                if published.isLoading { ProgressView().controlSize(.small) }
+            }
+            Text("二维动作模型排成的整套编排，保留片段顺序、重复次数和全部原始帧。导入只读取原文件，保存的是独立副本。")
+                .font(.callout).foregroundStyle(.secondary)
+            LibraryImportStatus(store: published, notice: notice)
+            if let error = published.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).textSelection(.enabled)
+            }
+            if published.arrangements.isEmpty && !published.isLoading {
+                Text("还没有视频动作编排。用「导入编排 JSON…」选择动作模型文件，或在视频库里把整套片段发布到这里。")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            ForEach(published.arrangements) { model in capturedCard(model) }
+        }
+    }
+
+    private func capturedCard(_ model: CapturedMotion) -> some View {
+        ClubCard {
+            HStack(alignment: .top, spacing: 16) {
+                ClippedPoseThumbnail(model: model)
+                    .frame(width: 104, height: 128)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                VStack(alignment: .leading, spacing: 7) {
+                    Text(model.name).font(.headline)
+                    Text("\(model.segments.count) 个片段 · 原片段 \(seconds(sourceDuration(model))) 秒 · 播放 \(seconds(planDuration(model))) 秒 · \(model.frameCount) 帧")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    Text(model.segments.enumerated().map { index, segment in
+                        "\(index + 1). \(segment.name)（\(segment.startFrame)–\(segment.endFrame) 帧\(segment.repeats > 1 ? " ×\(segment.repeats)" : "")）"
+                    }.joined(separator: " → ")).font(.callout).foregroundStyle(.secondary)
+                    Text(model.qualityNotice).font(.caption2).foregroundStyle(.secondary)
+                    if let method = model.arrangementMethod {
+                        Text(method).font(.caption2).foregroundStyle(.tertiary).textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    HStack(spacing: 10) {
+                        Button("练习这套", systemImage: "play.fill") { practiceClip(model) }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(!canPracticeClip || !model.hasPlayableMotion)
+                            .accessibilityIdentifier("sequence.captured.practice.\(model.id.uuidString)")
+                        if !canPracticeClip { Text("先结束当前练习，再练这一套。").font(.caption).foregroundStyle(.secondary) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func sourceDuration(_ model: CapturedMotion) -> Double {
+        model.segments.reduce(0) { $0 + model.duration(of: $1) }
+    }
+
+    private func planDuration(_ model: CapturedMotion) -> Double {
+        model.segments.reduce(0) { $0 + model.duration(of: $1) * Double($1.repeats) }
+    }
+
+    private func seconds(_ value: Double) -> String { String(format: "%.2f", value) }
 }

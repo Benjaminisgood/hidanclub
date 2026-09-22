@@ -90,13 +90,13 @@ struct ContentView: View {
                                 beginPractice(.captured)
                             }, canPractice: !training.active)
                         case .sequence:
-                            SequenceView(arrangements: arrangements, onPracticeAIST: { references, name in
+                            SequenceView(arrangements: arrangements, published: published, onPracticeAIST: { references, name in
                                 do {
                                     if training.active { demonstration.stop() }
                                     try training.prepareArrangement(references: references, name: name)
                                     beginPractice(.aist)
                                 } catch { arrangements.errorMessage = error.localizedDescription }
-                            })
+                            }, practiceClip: practiceCaptured, canPracticeClip: !training.active)
                         case .history: HistoryView(store: training)
                         case .settings:
                             PracticeSettingsView(aist: aist, trainingDirectory: training.dataDirectory) {

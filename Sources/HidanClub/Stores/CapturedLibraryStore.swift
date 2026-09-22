@@ -1,6 +1,28 @@
 import Foundation
 import SwiftUI
 
+/// One file offered to a library: either the published copy or the reason the
+/// file was refused. A refusal never touches the library or the source file.
+struct LibraryFileImport: Identifiable, Sendable {
+    let id = UUID()
+    let fileName: String
+    let published: CapturedMotion?
+    let notes: [String]
+    let problem: String?
+
+    init(fileName: String, published: CapturedMotion? = nil, notes: [String] = [], problem: String? = nil) {
+        self.fileName = fileName; self.published = published; self.notes = notes; self.problem = problem
+    }
+
+    var succeeded: Bool { published != nil }
+    /// Frames, segments and played duration of what actually got published.
+    var detail: String? {
+        guard let published else { return nil }
+        let seconds = published.segments.reduce(0.0) { $0 + published.duration(of: $1) * Double($1.repeats) }
+        return "\(published.frameCount) 帧 · \(published.segments.count) 个片段 · \(String(format: "%.1f", seconds)) 秒"
+    }
+}
+
 /// Published copies live separately from analysis/editor drafts. Importing never
 /// changes an existing source model or its complete original frame report.
 @MainActor final class CapturedLibraryStore: ObservableObject {
@@ -69,6 +91,56 @@ import SwiftUI
             errorMessage = nil
             return copy
         } catch { errorMessage = error.localizedDescription; return nil }
+    }
+
+    /// Publish motion-library JSON files (for example `*.hidanclub.json`).
+    ///
+    /// Each file is decoded and validated on its own; one bad file never blocks
+    /// the others and never modifies the source. 动作库 receives one continuous
+    /// action spanning the file's own segments, 编排库 receives the complete
+    /// segment list with its order and repeats. Both keep every original frame.
+    @discardableResult
+    func importFiles(_ urls: [URL], to destination: Destination) async -> [LibraryFileImport] {
+        guard !urls.isEmpty else { return [] }
+        beginWriteRequest()
+        defer { endWriteRequest() }
+        var results: [LibraryFileImport] = []
+        for url in urls {
+            let fileName = url.lastPathComponent
+            let decoded: CapturedMotionImport.Decoded
+            do { decoded = try await Task.detached { try CapturedMotionImport.load(from: url) }.value }
+            catch {
+                results.append(LibraryFileImport(fileName: fileName, problem: error.localizedDescription))
+                continue
+            }
+            var notes = decoded.notes
+            let duplicates = (destination == .actions ? actions : arrangements)
+                .filter { $0.sourceModelID == decoded.model.id }.count
+            if duplicates > 0 {
+                notes.append("库里已有 \(duplicates) 条来自同一文件的副本；本次仍保存为新的独立副本。")
+            }
+            let range = destination == .actions ? Self.actionRange(of: decoded.model) : nil
+            guard let copy = await importModel(decoded.model, to: destination, range: range) else {
+                results.append(LibraryFileImport(fileName: fileName, notes: notes,
+                                                 problem: errorMessage ?? CapturedMotionError.invalidModel.localizedDescription))
+                continue
+            }
+            results.append(LibraryFileImport(fileName: fileName, published: copy, notes: notes))
+        }
+        let failures = results.filter { !$0.succeeded }
+        errorMessage = failures.isEmpty ? nil
+            : failures.map { "\($0.fileName)：\($0.problem ?? "导入失败")" }.joined(separator: "\n")
+        return results
+    }
+
+    /// The file's own practice span, so an author's trimmed range survives an
+    /// import into 动作库 instead of being widened to every decoded frame.
+    private static func actionRange(of model: CapturedMotion) -> ClosedRange<Int>? {
+        guard !model.segments.isEmpty else { return nil }
+        let lower = model.segments.map(\.startFrame).min() ?? 0
+        let upper = model.segments.map(\.endFrame).max() ?? 0
+        guard lower >= 0, upper < model.frameCount, lower <= upper else { return nil }
+        return lower...upper
     }
 
     /// Update an explicitly opened published arrangement after its editor saves.
