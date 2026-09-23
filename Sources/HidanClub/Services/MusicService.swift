@@ -1,12 +1,15 @@
 import AVFoundation
+import HidanCore
 import SwiftUI
 import UniformTypeIdentifiers
 
 /// Local audio stays on this Mac. The built-in beat is synthesized without external assets.
+/// Two tempo modes: the beat's BPM slider, or a library track whose estimated BPM
+/// the motion follows in ¼×–2× multiples.
 @MainActor final class MusicService: ObservableObject {
     @Published var bpm: Double = 90 {
         didSet {
-            let normalized = bpm.isFinite ? min(180, max(40, bpm)) : 90
+            let normalized = MotionTempo.clampBeat(bpm)
             if bpm != normalized { bpm = normalized; return }
             guard bpm != oldValue, sourceURL == nil else { return }
             let wasPlaying = isPlaying
@@ -20,6 +23,12 @@ import UniformTypeIdentifiers
     @Published var trackName = "Club beat · 原创节拍"
     @Published var errorMessage: String?
     @Published var sourceURL: URL?
+    /// Library track behind `sourceURL`; nil for the built-in beat and ad-hoc files.
+    @Published private(set) var trackID: UUID?
+    /// Effective BPM of the loaded track (manual value or estimate); nil while unknown.
+    @Published var trackBPM: Double?
+    /// Motion beats per music beat while a track plays.
+    @Published var beatMultiplier: BeatMultiplier = .single
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let timePitch = AVAudioUnitTimePitch()
@@ -29,6 +38,16 @@ import UniformTypeIdentifiers
     private let fileLoop = FileLoopScheduler()
 
     var isPaused: Bool { hasScheduledAudio && !isPlaying }
+    var tempoMode: TempoMode { sourceURL == nil ? .beat : .music }
+
+    /// Tempo the reference motion should follow. Beat mode: the metronome BPM.
+    /// Music mode: track BPM × playback rate × multiplier, nil until the track has a BPM.
+    var motionBeatBPM: Double? {
+        switch tempoMode {
+        case .beat: return bpm
+        case .music: return trackBPM.flatMap { MotionTempo.musicTarget(trackBPM: $0, rate: Double(rate), multiplier: beatMultiplier) }
+        }
+    }
 
     var currentBeat: Int? {
         guard isPlaying, sourceURL == nil,
@@ -45,10 +64,11 @@ import UniformTypeIdentifiers
     }
 
     func useBeat() {
-        stop(); file = nil; sourceURL = nil; rate = 1
+        stop(); file = nil; sourceURL = nil; trackID = nil; trackBPM = nil; rate = 1
         trackName = "Club beat · 原创节拍"; errorMessage = nil; prepareBeat()
     }
 
+    /// Plays a file as-is without a library record; it has no tempo of its own.
     func load(url: URL) {
         do {
             let audio = try AVAudioFile(forReading: url)
@@ -57,8 +77,18 @@ import UniformTypeIdentifiers
             stop()
             configureGraph(format: audio.processingFormat)
             file = audio; sourceURL = url; trackName = url.deletingPathExtension().lastPathComponent
+            trackID = nil; trackBPM = nil
             rate = 1; errorMessage = nil
         } catch { errorMessage = "无法读取音频：\(error.localizedDescription)" }
+    }
+
+    /// Plays a library copy and remembers which track and BPM the motion follows.
+    func loadTrack(id: UUID, name: String, url: URL, bpm: Double?) {
+        load(url: url)
+        guard sourceURL == url, errorMessage == nil else { return }
+        trackID = id; trackBPM = bpm
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { trackName = trimmed }
     }
 
     func toggle() { isPlaying ? pause() : play() }
@@ -105,7 +135,7 @@ import UniformTypeIdentifiers
 
     private func prepareBeat() {
         let sr = 44100.0
-        let secondsPerBeat = 60 / min(180, max(40, bpm))
+        let secondsPerBeat = 60 / MotionTempo.clampBeat(bpm)
         let length = AVAudioFrameCount(sr * secondsPerBeat * 8)
         guard let format = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 2),
               let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: length),

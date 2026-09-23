@@ -15,7 +15,7 @@ import HidanCore
     @Published private(set) var beatBPM: Double?
     @Published var speed: Double = 1 {
         didSet {
-            let valid = speed.isFinite ? min(1, max(0.25, speed)) : 1
+            let valid = MotionTempo.clampSpeed(speed)
             if speed != valid { speed = valid }
             if playback.isPlaying { startTimer() }
         }
@@ -117,7 +117,7 @@ import HidanCore
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer(timeInterval: 1 / (60 * min(1, max(0.25, speed))), repeats: true) { [weak self] _ in
+        timer = Timer(timeInterval: 1 / (60 * MotionTempo.clampSpeed(speed)), repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
         RunLoop.main.add(timer!, forMode: .common)

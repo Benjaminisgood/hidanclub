@@ -12,7 +12,7 @@ public enum AISTPracticeError: Error, LocalizedError, Equatable {
         switch self {
         case .invalidSequence: return "动作序列的帧数或帧率无效。"
         case .invalidRange: return "请选择动作序列中的连续帧范围，起始帧不能晚于结束帧。"
-        case .invalidSpeed: return "跟练速度请选择 0.25 至 1 倍速。"
+        case .invalidSpeed: return "跟练速度请选择 0.25 至 2 倍速。"
         case .missingName: return "请为这段跟练动作填写名称。"
         case .invalidRounds: return "跟练组数请选择 2、4 或 6 组。"
         case .trainingInProgress: return "当前练习尚未结束。请先结束练习，再安排新的动作片段。"
@@ -56,7 +56,7 @@ public struct AISTPracticeReference: Codable, Equatable, Sendable {
         guard startFrame >= 0, endFrame >= startFrame, endFrame < sequence.frameCount else {
             throw AISTPracticeError.invalidRange
         }
-        guard speed.isFinite, (0.25...1).contains(speed) else { throw AISTPracticeError.invalidSpeed }
+        guard speed.isFinite, MotionTempo.speedRange.contains(speed) else { throw AISTPracticeError.invalidSpeed }
         guard !name.isEmpty else { throw AISTPracticeError.missingName }
         guard duration.isFinite else { throw AISTPracticeError.invalidSequence }
     }

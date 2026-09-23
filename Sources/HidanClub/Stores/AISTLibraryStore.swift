@@ -27,7 +27,7 @@ import AppKit
     }
     @Published var speed: Double = 1 {
         didSet {
-            let valid = speed.isFinite ? min(1, max(0.25, speed)) : 1
+            let valid = MotionTempo.clampSpeed(speed)
             if speed != valid { speed = valid }
             if isPlaying { startTimer() }
         }
@@ -212,7 +212,8 @@ import AppKit
         timer?.invalidate()
         // Sequential source-frame progression. A delayed callback advances one frame,
         // never discards observations to catch up to wall time. Slow machines play slower.
-        timer = Timer(timeInterval: 1 / (60 * min(1, max(0.25, speed))), repeats: true) { [weak self] _ in
+        // Above 1× a 60 Hz display shows only some frames; the data order is unchanged.
+        timer = Timer(timeInterval: 1 / (60 * MotionTempo.clampSpeed(speed)), repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
         RunLoop.main.add(timer!, forMode: .common)
