@@ -25,7 +25,7 @@ struct PracticeSettingsView: View {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 7) {
                     Eyebrow(text: "SETTINGS")
-                    Text("设置").font(.system(size: 28, weight: .bold))
+                    Text("设置页").font(.system(size: 28, weight: .bold))
                     Text("外观、坐标来源和进入练习时的默认画面放在这里。跟练时的播放、速度和镜像仍留在动作里。")
                         .font(.callout).foregroundStyle(.secondary)
                 }
@@ -117,7 +117,7 @@ struct PracticeSettingsView: View {
         ClubCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("本机数据").font(.headline)
-                Text("动作数据和练习记录都在这台 Mac 上。").font(.caption).foregroundStyle(.secondary)
+                Text("动作数据和练习录都在这台 Mac 上。").font(.caption).foregroundStyle(.secondary)
                 Text(aist.directory.path).font(.caption.monospaced()).textSelection(.enabled)
                 HStack {
                     Button("选择动作库目录") { aist.chooseDirectory() }
@@ -125,7 +125,7 @@ struct PracticeSettingsView: View {
                     Button("在 Finder 中查看") { NSWorkspace.shared.open(aist.directory) }
                 }
                 Divider()
-                Button("打开练习记录目录") {
+                Button("打开练习录目录") {
                     try? FileManager.default.createDirectory(at: trainingDirectory, withIntermediateDirectories: true)
                     NSWorkspace.shared.open(trainingDirectory)
                 }

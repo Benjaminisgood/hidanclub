@@ -9,14 +9,14 @@ struct HistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Eyebrow(text: "PRACTICE JOURNAL / 练习记录")
+                Eyebrow(text: "PRACTICE JOURNAL / 练习录")
                 HStack {
                     Text("看见一点一滴的积累。").font(.system(size: 30, weight: .bold))
                     Spacer()
                     Button("导出记录", systemImage: "square.and.arrow.up") { export() }.disabled(store.history.isEmpty)
                 }
                 HStack(spacing: 20) {
-                    stat("练习记录", "\(store.history.count)", "次已结束的练习")
+                    stat("练习录", "\(store.history.count)", "次已结束的练习")
                     stat("累计流程时长", String(format: "%.1f", total / 60), "分钟 · 含休息，不含暂停")
                     stat("完整练习段落", "\(store.history.reduce(0) { $0 + $1.completedBlocks })", "跳过的段落不计入")
                 }

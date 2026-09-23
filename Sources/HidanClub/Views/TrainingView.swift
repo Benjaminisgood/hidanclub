@@ -490,7 +490,7 @@ private struct CapturedTrainingControls: View {
                 Toggle("整段循环", isOn: $playback.loop).toggleStyle(.checkbox)
                 Spacer()
             }.controlSize(.small).font(.caption)
-            Text("按原视频时间戳逐帧示范；缺失或多人帧保留并提示。当前计时是播放进度，尚未记入练习记录。")
+            Text("按原视频时间戳逐帧示范；缺失或多人帧保留并提示。当前计时是播放进度，尚未记入练习录。")
                 .font(.caption2).foregroundStyle(.secondary)
         }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
     }

@@ -3,7 +3,7 @@ import SwiftUI
 import HidanCore
 
 enum ClubPage: String, CaseIterable, Identifiable {
-    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习录", settings = "设置", resources = "资源与研究"
+    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习录", settings = "设置页", resources = "资源库"
     var id: String { rawValue }
     var icon: String {
         switch self {

@@ -83,7 +83,7 @@ struct AISTLibraryView: View {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("动作库").font(.system(size: 28, weight: .bold))
-                    Text("列表用原始逐帧重建自动播放。点开或练习时默认用官方时序优化，可在设置里更换。")
+                    Text("列表用原始逐帧重建自动播放。点开或练习时默认用官方时序优化，可在设置页里更换。")
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -234,7 +234,7 @@ struct AISTLibraryView: View {
                 } else if store.loading {
                     ProgressView("正在读取动作…").frame(maxWidth: .infinity, minHeight: 380)
                 } else {
-                    ContentUnavailableView("这个动作暂时打不开", systemImage: "figure.dance", description: Text("返回列表再选一次，或在设置里重新读取动作库。"))
+                    ContentUnavailableView("这个动作暂时打不开", systemImage: "figure.dance", description: Text("返回列表再选一次，或在设置页里重新读取动作库。"))
                     Button("全部动作") { showDetail = false }
                 }
                 if let message { Text(message).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
