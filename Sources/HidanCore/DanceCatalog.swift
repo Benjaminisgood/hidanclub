@@ -1,7 +1,7 @@
 import Foundation
 
 public enum DanceCatalog {
-    public static let contentNotice = "以下为本应用编写的基础练习提示，不是授权视频示范，也不是经过教练验证的课程。动作名和风格归属仅用于学习导航；BPM 是可调整的练习起点。出现疼痛或眩晕时停止；更复杂动作请向合格教师学习。"
+    public static let contentNotice = "以下为本应用编写的基本功提示，不是授权视频示范，也不是经过教练验证的课程。动作名和风格归属仅用于学习导航；BPM 是可调整的练习起点。出现疼痛或眩晕时停止；更复杂动作请向合格教师学习。"
 
     public static let moves: [DanceMove] = [
         DanceMove(id: "hiphop-bounce", name: "基础上下律动", englishName: "Bounce", style: .hipHop,

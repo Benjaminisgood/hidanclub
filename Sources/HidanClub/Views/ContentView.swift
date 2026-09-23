@@ -3,7 +3,7 @@ import SwiftUI
 import HidanCore
 
 enum ClubPage: String, CaseIterable, Identifiable {
-    case library = "动作库", basics = "基础练习", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习记录", settings = "设置", resources = "资源与研究"
+    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习记录", settings = "设置", resources = "资源与研究"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -248,7 +248,7 @@ struct ContentView: View {
         let stored = UserDefaults.standard.object(forKey: "training.defaultRounds") as? Int ?? 4
         let rounds = [2, 4, 6].contains(stored) ? stored : 4
         do {
-            try training.prepareMovePractice(name: title.isEmpty ? (moves.first?.name ?? "基础练习") : title, rounds: rounds)
+            try training.prepareMovePractice(name: title.isEmpty ? (moves.first?.name ?? "基本功") : title, rounds: rounds)
             video.pause(); demonstration.pause(); aist.pause(); captured.pause()
             beginPractice(.generated)
         } catch {

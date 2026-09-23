@@ -16,7 +16,7 @@ struct SequenceView: View {
                     VStack(alignment: .leading, spacing: 7) {
                         Eyebrow(text: "SEQUENCE LIBRARY")
                         Text("编排库").font(.system(size: 28, weight: .bold))
-                        Text("把动作库里的片段排成一套，再开始练习。基础练习里的四段连播直接播放动作。")
+                        Text("把动作库里的片段排成一套，再开始练习。基本功里的四段连播直接播放动作。")
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     Spacer()

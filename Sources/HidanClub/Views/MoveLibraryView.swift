@@ -61,13 +61,13 @@ struct MoveLibraryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Eyebrow(text: "PRACTICE")
-                    Text("基础练习").font(.system(size: 28, weight: .bold))
+                    Eyebrow(text: "FUNDAMENTALS")
+                    Text("基本功").font(.system(size: 28, weight: .bold))
                     Text("每张卡片都有两套练习坐标。列表自动播放逐帧采样；点开和练习默认使用时序平滑。")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 HStack {
-                    TextField("搜索基础练习 / English name", text: $filters.query)
+                    TextField("搜索基本功 / English name", text: $filters.query)
                         .textFieldStyle(.roundedBorder).frame(width: 300)
                         .accessibilityIdentifier("motionLibrary.practice.search")
                     Spacer()
@@ -101,7 +101,7 @@ struct MoveLibraryView: View {
                 }
                 HStack(spacing: 8) {
                     Button { motions.pause(); showingDetail = false } label: { Image(systemName: "chevron.left") }
-                        .buttonStyle(.plain).foregroundStyle(.secondary).help("全部基础练习")
+                        .buttonStyle(.plain).foregroundStyle(.secondary).help("全部基本功")
                     Text(motions.title).font(.title3.weight(.semibold)).lineLimit(1)
                     if motions.moves.count > 1 {
                         Text(motions.moves.map(\.name).joined(separator: " → "))

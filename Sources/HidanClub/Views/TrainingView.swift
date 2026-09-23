@@ -115,7 +115,7 @@ struct TrainingView: View {
         switch source {
         case .aist: return store.plan.title
         case .captured: return captured.selected?.name ?? "视频动作"
-        case .generated: return practice.title.isEmpty ? "基础练习" : practice.title
+        case .generated: return practice.title.isEmpty ? "基本功" : practice.title
         case .none: return "看着自己"
         }
     }
@@ -180,7 +180,7 @@ struct TrainingView: View {
     private var stagePanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Label(source == .aist ? (demonstration.reference?.name ?? "动作示范") : source == .captured ? (captured.selected?.name ?? "动作编排") : source == .generated ? (practice.title.isEmpty ? "基础练习" : practice.title) : "动作示范", systemImage: "figure.dance")
+                Label(source == .aist ? (demonstration.reference?.name ?? "动作示范") : source == .captured ? (captured.selected?.name ?? "动作编排") : source == .generated ? (practice.title.isEmpty ? "基本功" : practice.title) : "动作示范", systemImage: "figure.dance")
                     .font(.callout.weight(.semibold)).lineLimit(1)
                 Spacer(minLength: 8)
                 if source == .aist { Text(demonstration.stageLabel).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }

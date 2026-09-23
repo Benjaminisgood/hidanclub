@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shared motion picture for the action library and basic practice.
+/// Shared motion picture for the action library and fundamentals.
 /// Playback controls stay in the bar under the picture, not on top of it.
 struct MotionStageChrome: View {
     var joints: [SIMD3<Double>]
