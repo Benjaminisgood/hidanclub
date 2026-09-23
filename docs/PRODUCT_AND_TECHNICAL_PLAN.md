@@ -59,7 +59,7 @@ AI 可以估计身体关键点，也可以在有标注的数据上学习有限�
 | 3D 动作参考 | 现成 AIST++ 标注可直接使用 | 来源坐标、质量标记、全帧保留、显示变换分离 | 全量数据已安装校验；本轮完善参考浏览与训练接入 |
 | 从用户视频估计 3D 姿态 | macOS 14 / iOS 17 起可研究 | 深度来源、尺度与接触误差验证 | 尚未接入；已有 3D 参考不代表用户视频已能恢复 3D |
 | 舞步名称/动作分段 | 有监督时序模型可做有限类别 | 专家定义标签，负例，跨舞者独立测试 | 未训练；100 个基础名称来自官方 metadata，属于来源标签 |
-| 节拍/动作时序比较 | 明确动作和对齐条件后可研究 | beat/downbeat 标签、镜像语义、允许的风格差异 | 原创节拍八拍显示；未自动分析导入歌曲 |
+| 节拍/动作时序比较 | 明确动作和对齐条件后可研究 | beat/downbeat 标签、镜像语义、允许的风格差异 | 原创节拍，或导入音乐的整体 BPM；动作按倍数跟随。没有第一拍，也不跟速度变化 |
 | 纠错与质量评分 | 需要专门评估模型 | 教师量表、标注一致性、误导反馈评估 | 暂不提供 |
 | 动作组合设计 | 已掌握动作库 + 约束即可落地 | 先修/BPM/冲击检查，舞者复核连接 | 已实现四组八拍规则草稿 |
 | 自由生成 3D 编舞 | 存在研究系统 | 权重与数据许可、接触/碰撞/风格/人体可做性、教师审核 | 后期实验，不做首版承诺 |
@@ -109,7 +109,7 @@ SwiftUI scenes / views
   ├─ HidanCore: 动作、训练计划、组合规则、计时状态机
   ├─ TrainingStore: 训练状态与本地历史
   ├─ VideoService: AVPlayer、镜像显示、速度、A–B 循环
-  ├─ MusicService: AVAudioEngine / PlayerNode / TimePitch
+  ├─ MusicService: AVAudioEngine / PlayerNode / TimePitch；MusicLibraryStore 保存曲目与节拍
   ├─ AISTLibraryStore: 本地 manifest、全帧 Float64 序列与动作参考
   └─ PoseAnalyzer: AVAssetReader → Vision → 全帧 PoseReport
 ```
@@ -118,7 +118,7 @@ Mac 原型基线 macOS 14+，SwiftPM 构建 .app。当前工作站有 Swift 6.3.
 
 Vision 分析顺序读取全部解码帧，校正轨道旋转/镜像，保存原始 PTS；无检测保留空观测，多人保留 ambiguous 标记，不在不同人间静默跳转。取消时不发布半份报告，旧任务不能覆盖新任务。坐标归一化且原点左下，骨架复查与视频显示不是相机标定后的运动捕捉。
 
-音乐使用 AVAudioEngine 合成原创八拍节奏，支持本地音频、独立速度/音高、音量与播放暂停。八拍视觉取音频渲染时间，不由训练倒计时猜测。本地曲目暂未自动检测 BPM/首拍；视频播放器和音频播放器也没有承诺共同时间基下的精准同步。A–B 视频循环是学习用途，仍可能有 seek 边界延迟，不能用于专业 sample-accurate 编排导出。
+音乐使用 AVAudioEngine 合成原创八拍节奏，也保存用户导入的音频原字节。原创节拍用 BPM 滑杆。音乐模式在本机用频谱通量估计一个整体 BPM，置信度只表示周期有多稳，不表示一定正确；可以改成听到的 BPM。动作速度按 ¼×、½×、1×、2× 跟随「曲目 BPM × 播放速度 × 倍数」，范围 0.25–2 倍。估计不找第一拍，也不跟随中途变速。八拍视觉仍只对原创节拍取音频渲染时间。视频播放器和音频播放器没有承诺共同时间基下的精准同步。A–B 视频循环是学习用途，仍可能有 seek 边界延迟，不能用于专业 sample-accurate 编排导出。
 
 [Apple Developer Program License Agreement 3.3.6(D)](https://developer.apple.com/support/terms/apple-developer-program-license-agreement/)明确约束 MusicKit 内容下载、上传、修改及与其他内容同步（文档另行许可除外）。因此不能把 Apple Music 订阅曲目当作可随意解码、变速、配视频或训练模型的音源。MusicKit 以后只在具体用例和权限核查后设计。
 

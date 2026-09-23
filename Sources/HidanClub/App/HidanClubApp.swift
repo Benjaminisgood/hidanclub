@@ -9,6 +9,7 @@ import AppKit
     @StateObject private var captured = CapturedMotionStore()
     @StateObject private var arrangements = AISTArrangementStore()
     @StateObject private var music = MusicService()
+    @StateObject private var musicLibrary = MusicLibraryStore()
     @StateObject private var video = VideoService()
     @StateObject private var analyzer = PoseAnalyzer()
     @StateObject private var aist = AISTLibraryStore()
@@ -28,7 +29,7 @@ import AppKit
 
     var body: some Scene {
         WindowGroup(Bundle.main.bundleIdentifier?.contains(".qa.") == true ? "Hidan QA · 隔离测试" : "Hidan Club") {
-            ContentView(training: training, music: music, video: video, analyzer: analyzer, aist: aist, demonstration: demonstration, camera: camera, captured: captured, arrangements: arrangements, videoLibrary: videoLibrary, published: published, practiceMotions: practiceMotions)
+            ContentView(training: training, music: music, video: video, analyzer: analyzer, aist: aist, demonstration: demonstration, camera: camera, captured: captured, arrangements: arrangements, videoLibrary: videoLibrary, published: published, practiceMotions: practiceMotions, musicLibrary: musicLibrary)
                 .disabled(isTerminating)
                 .overlay {
                     if isTerminating {
@@ -50,7 +51,7 @@ import AppKit
                         camera.stop {
                             Task {
                                 for task in Array(recordingImports.values) { await task.value }
-                                while videoLibrary.isImporting || published.isImporting || captured.isSaving || captured.isExporting {
+                                while videoLibrary.isImporting || musicLibrary.isImporting || published.isImporting || captured.isSaving || captured.isExporting {
                                     try? await Task.sleep(for: .milliseconds(50))
                                 }
                                 videoLibrary.cancelAnalysis()
@@ -66,7 +67,7 @@ import AppKit
                         }
                     }
                     training.onPauseForSleep = { demonstration.pause(); music.pause(); video.pause(); aist.pause(); camera.stop(); captured.pause(); practiceMotions.pause() }
-                    appDelegate.beforeTerminate = { demonstration.stop(); training.retrySaving(); music.stop(); analyzer.cancel(); aist.pause(); camera.stop(); captured.pause(); practiceMotions.pause() }
+                    appDelegate.beforeTerminate = { demonstration.stop(); training.retrySaving(); music.stop(); musicLibrary.cancelAnalyses(); analyzer.cancel(); aist.pause(); camera.stop(); captured.pause(); practiceMotions.pause() }
                 }
                 .onChange(of: training.clock.state) { _, newValue in
                     if newValue == .paused {
@@ -93,13 +94,13 @@ import AppKit
                     BrandIcon(size: 64)
                     Text("Hidan Club").font(.title2.bold())
                 }
-                Text("本地优先的街舞学习原型 · 0.4.0").foregroundStyle(.secondary)
+                Text("本地优先的街舞学习原型 · 0.5.0").foregroundStyle(.secondary)
                 Text("导入视频与训练录像保存在这台 Mac 的视频库，重启后仍可播放。身体关节识别在本机完成，不向云端上传。")
                 Button("打开训练记录目录") {
                     try? FileManager.default.createDirectory(at: training.dataDirectory, withIntermediateDirectories: true)
                     NSWorkspace.shared.open(training.dataDirectory)
                 }
-                Text("视频库保存原视频，并在本页识别肢体。截出的一段收入动作库；动作库和编排库也可以从 JSON 文件导入，导入只读取原文件并保存独立副本。当前识别为二维关节，不自动命名舞步或评分。外观和默认画面在应用内的设置页。")
+                Text("视频库保存原视频，并在本页识别肢体。截出的一段收入动作库；动作库和编排库也可以从 JSON 文件导入，导入只读取原文件并保存独立副本。导入的音乐保存在本机音乐库，节拍在本机识别。当前识别为二维关节，不自动命名舞步或评分。外观和默认画面在应用内的设置页。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(28).frame(width: 440)
         }

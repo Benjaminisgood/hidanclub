@@ -6,11 +6,14 @@ import HidanCore
 /// track that also carries the local tempo estimate and any manual BPM correction.
 @MainActor final class MusicLibraryStore: ObservableObject {
     @Published private(set) var tracks: [LibraryTrack] = []
+    @Published private(set) var presets: [BeatPreset] = []
     @Published private(set) var isLoading = false
     @Published private(set) var isImporting = false
     @Published private(set) var analyzing: Set<UUID> = []
-    /// Track the music bar restores on the next launch; nil means the built-in beat.
+    /// Track the music bar restores on the next launch; nil means an original beat.
     @Published private(set) var selectedTrackID: UUID?
+    /// Original-beat preset restored when no track is selected.
+    @Published private(set) var selectedBeatID: UUID?
     @Published private(set) var multiplier: BeatMultiplier = .single
     @Published var errorMessage: String?
     let directory: URL
@@ -18,6 +21,7 @@ import HidanCore
     private struct Analysis { let work: Task<MusicBeatAnalysis, Error>; let completion: Task<Void, Never> }
     private var importCount = 0
     private var storageRevision = 0
+    private var didApplySelection = false
     private var loadingTask: Task<Void, Never>?
     private var analyses: [UUID: Analysis] = [:]
 
@@ -29,6 +33,7 @@ import HidanCore
 
     var isBusy: Bool { isImporting || !analyzing.isEmpty }
     var selectedTrack: LibraryTrack? { track(selectedTrackID) }
+    var selectedBeat: BeatPreset? { presets.first { $0.id == selectedBeatID } }
 
     func track(_ id: UUID?) -> LibraryTrack? {
         guard let id else { return nil }
@@ -48,9 +53,12 @@ import HidanCore
             guard let self, !Task.isCancelled else { return }
             guard storageRevision == startedRevision else { reload(); return }
             tracks = result.tracks
+            presets = result.presets
             selectedTrackID = tracks.contains { $0.id == result.selection.trackID } ? result.selection.trackID : nil
+            selectedBeatID = presets.contains { $0.id == result.selection.beatPresetID } ? result.selection.beatPresetID : nil
             multiplier = BeatMultiplier(rawValue: result.selection.multiplier) ?? .single
             isLoading = false
+            if result.presetsWereMissing { try? MusicLibraryPersistence.saveBeats(presets, to: directory) }
             if !result.errors.isEmpty { errorMessage = result.errors.joined(separator: "\n") }
             for track in tracks where track.needsAnalysis { analyze(track.id) }
         }
@@ -140,10 +148,75 @@ import HidanCore
         replace(current)
     }
 
+    /// The saved track and multiplier, once, after the first successful load.
+    /// Later calls return nil so a recreated music bar does not restart playback.
+    func consumeSavedSelection() -> (multiplier: BeatMultiplier, track: LibraryTrack?, beat: BeatPreset?)? {
+        guard !isLoading, !didApplySelection else { return nil }
+        didApplySelection = true
+        return (multiplier, selectedTrack, selectedBeat)
+    }
+
     func select(_ id: UUID?) {
         guard id == nil || tracks.contains(where: { $0.id == id }) else { return }
         selectedTrackID = id
         persistSelection()
+    }
+
+    /// Leaves the imported track and any saved beat, so the live BPM is not written back.
+    func detachLibrarySelection() {
+        selectedTrackID = nil
+        selectedBeatID = nil
+        persistSelection()
+    }
+
+    func selectBeat(_ id: UUID) {
+        guard presets.contains(where: { $0.id == id }) else { return }
+        selectedBeatID = id
+        selectedTrackID = nil
+        persistSelection()
+    }
+
+    @discardableResult func addBeat(name: String, bpm: Double) throws -> BeatPreset {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw MusicLibraryError.emptyName }
+        let preset = BeatPreset(schemaVersion: 1, id: UUID(), name: trimmed, bpm: MotionTempo.clampBeat(bpm), createdAt: Date())
+        try preset.validate()
+        var next = presets
+        next.append(preset)
+        try MusicLibraryPersistence.saveBeats(next, to: directory)
+        presets = next
+        selectBeat(preset.id)
+        return preset
+    }
+
+    func renameBeat(_ id: UUID, to name: String) throws {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw MusicLibraryError.emptyName }
+        guard let index = presets.firstIndex(where: { $0.id == id }) else { throw MusicLibraryError.invalidMetadata }
+        var next = presets
+        next[index].name = trimmed
+        try next[index].validate()
+        try MusicLibraryPersistence.saveBeats(next, to: directory)
+        presets = next
+    }
+
+    func rememberBeatTempo(_ bpm: Double) {
+        guard let id = selectedBeatID, let index = presets.firstIndex(where: { $0.id == id }) else { return }
+        let clamped = MotionTempo.clampBeat(bpm)
+        guard abs(presets[index].bpm - clamped) > 0.4 else { return }
+        presets[index].bpm = clamped
+        do { try MusicLibraryPersistence.saveBeats(presets, to: directory) }
+        catch { errorMessage = error.localizedDescription }
+    }
+
+    func deleteBeat(_ id: UUID) {
+        let next = presets.filter { $0.id != id }
+        guard next.count != presets.count else { return }
+        do {
+            try MusicLibraryPersistence.saveBeats(next, to: directory)
+            presets = next
+            if selectedBeatID == id { selectedBeatID = nil; persistSelection() }
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func setMultiplier(_ value: BeatMultiplier) {
@@ -154,7 +227,7 @@ import HidanCore
 
     private func persistSelection() {
         do {
-            try MusicLibraryPersistence.saveSelection(.init(schemaVersion: 1, trackID: selectedTrackID, multiplier: multiplier.rawValue), to: directory)
+            try MusicLibraryPersistence.saveSelection(.init(schemaVersion: 1, trackID: selectedTrackID, multiplier: multiplier.rawValue, beatPresetID: selectedBeatID), to: directory)
             storageRevision += 1
         } catch { errorMessage = error.localizedDescription }
     }
@@ -181,18 +254,46 @@ enum MusicLibraryPersistence {
         var schemaVersion: Int
         var trackID: UUID?
         var multiplier: Double
+        var beatPresetID: UUID?
+
+        init(schemaVersion: Int, trackID: UUID?, multiplier: Double, beatPresetID: UUID? = nil) {
+            self.schemaVersion = schemaVersion
+            self.trackID = trackID
+            self.multiplier = multiplier
+            self.beatPresetID = beatPresetID
+        }
+
+        init(from decoder: Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+            trackID = try values.decodeIfPresent(UUID.self, forKey: .trackID)
+            multiplier = try values.decode(Double.self, forKey: .multiplier)
+            beatPresetID = try values.decodeIfPresent(UUID.self, forKey: .beatPresetID)
+        }
     }
-    struct LoadResult: Sendable { let tracks: [LibraryTrack]; let selection: Selection; let errors: [String] }
+    struct LoadResult: Sendable {
+        let tracks: [LibraryTrack]
+        let presets: [BeatPreset]
+        let presetsWereMissing: Bool
+        let selection: Selection
+        let errors: [String]
+    }
 
     static func load(from directory: URL) -> LoadResult {
         var selection = Selection(schemaVersion: 1, trackID: nil, multiplier: 1)
-        guard FileManager.default.fileExists(atPath: directory.path) else { return LoadResult(tracks: [], selection: selection, errors: []) }
+        let missing = LoadResult(tracks: [], presets: BeatPresetLibrary.starters, presetsWereMissing: true, selection: selection, errors: [])
+        guard FileManager.default.fileExists(atPath: directory.path) else { return missing }
         var tracks: [LibraryTrack] = [], errors: [String] = []
+        var presets = BeatPresetLibrary.starters
+        var presetsWereMissing = !FileManager.default.fileExists(atPath: directory.appendingPathComponent("beats.json").path)
         do {
             for file in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey]) where file.pathExtension == "json" {
                 do {
                     if file.lastPathComponent == "selection.json" {
                         selection = try readSelection(at: file, directory: directory)
+                    } else if file.lastPathComponent == "beats.json" {
+                        presets = try readBeats(at: file, directory: directory)
+                        presetsWereMissing = false
                     } else {
                         let track = try read(at: file, directory: directory)
                         _ = try trackURL(for: track, in: directory)
@@ -201,7 +302,8 @@ enum MusicLibraryPersistence {
                 } catch { errors.append("\(file.lastPathComponent) 无法读取，文件已保留：\(error.localizedDescription)") }
             }
         } catch { errors.append(error.localizedDescription) }
-        return LoadResult(tracks: tracks.sorted { $0.importedAt > $1.importedAt }, selection: selection, errors: errors)
+        return LoadResult(tracks: tracks.sorted { $0.importedAt > $1.importedAt }, presets: presets,
+                          presetsWereMissing: presetsWereMissing, selection: selection, errors: errors)
     }
 
     /// Verifies the source decodes, copies its bytes unchanged and verifies the copy.
@@ -209,7 +311,7 @@ enum MusicLibraryPersistence {
         let audio: AVAudioFile
         do { audio = try AVAudioFile(forReading: sourceURL) }
         catch { throw MusicLibraryError.unreadableAudio(error.localizedDescription) }
-        let format = audio.fileFormat
+        let format = audio.processingFormat
         guard audio.length > 0, format.sampleRate > 0, format.channelCount > 0 else { throw MusicLibraryError.unreadableAudio("文件里没有音频数据。") }
         let id = UUID()
         let sourceExtension = sourceURL.pathExtension.lowercased()
@@ -261,6 +363,18 @@ enum MusicLibraryPersistence {
         try encoder.encode(track).write(to: file, options: .atomic)
     }
 
+    static func saveBeats(_ presets: [BeatPreset], to directory: URL) throws {
+        for preset in presets { try preset.validate() }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = directory.appendingPathComponent("beats.json")
+        if FileManager.default.fileExists(atPath: file.path) {
+            do { _ = try readBeats(at: file, directory: directory) }
+            catch { throw MusicLibraryError.corruptedExistingFile }
+        }
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(presets).write(to: file, options: .atomic)
+    }
+
     static func saveSelection(_ selection: Selection, to directory: URL) throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let file = directory.appendingPathComponent("selection.json")
@@ -277,6 +391,14 @@ enum MusicLibraryPersistence {
         let track = try JSONDecoder().decode(LibraryTrack.self, from: Data(contentsOf: file)); try track.validate()
         guard track.id.uuidString.lowercased() == file.deletingPathExtension().lastPathComponent.lowercased() else { throw MusicLibraryError.invalidMetadata }
         return track
+    }
+
+    private static func readBeats(at file: URL, directory: URL) throws -> [BeatPreset] {
+        guard file.resolvingSymlinksInPath().deletingLastPathComponent() == directory.resolvingSymlinksInPath() else { throw MusicLibraryError.invalidMetadata }
+        let presets = try JSONDecoder().decode([BeatPreset].self, from: Data(contentsOf: file))
+        for preset in presets { try preset.validate() }
+        guard Set(presets.map(\.id)).count == presets.count else { throw MusicLibraryError.invalidMetadata }
+        return presets
     }
 
     private static func readSelection(at file: URL, directory: URL) throws -> Selection {

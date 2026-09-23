@@ -3,13 +3,14 @@ import SwiftUI
 import HidanCore
 
 enum ClubPage: String, CaseIterable, Identifiable {
-    case library = "动作库", basics = "基础练习", video = "视频库", sequence = "编排库", history = "练习记录", settings = "设置", resources = "资源与研究"
+    case library = "动作库", basics = "基础练习", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习记录", settings = "设置", resources = "资源与研究"
     var id: String { rawValue }
     var icon: String {
         switch self {
         case .library: return "figure.dance"
         case .basics: return "figure.walk"
         case .video: return "play.rectangle"
+        case .music: return "music.note.list"
         case .sequence: return "square.stack.3d.up"
         case .history: return "calendar"
         case .settings: return "gearshape"
@@ -31,6 +32,7 @@ struct ContentView: View {
     @ObservedObject var videoLibrary: VideoLibraryStore
     @ObservedObject var published: CapturedLibraryStore
     @ObservedObject var practiceMotions: PracticeMotionStore
+    @ObservedObject var musicLibrary: MusicLibraryStore
     @State private var trainingSource: TrainingSource = .none
     @State private var selection: ClubPage? = .library
     @State private var practicing = false
@@ -74,7 +76,7 @@ struct ContentView: View {
                     } else {
                         switch selection ?? .library {
                         case .library:
-                            AISTLibraryView(store: aist, training: training, music: music, arrangements: arrangements, clips: published,
+                            AISTLibraryView(store: aist, training: training, music: music, musicLibrary: musicLibrary, arrangements: arrangements, clips: published,
                                             filters: $aistFilters, showDetail: $showMotionDetail,
                                             openTraining: { beginPractice(.aist) }, offerMusicPractice: { musicPractice = $0 },
                                             practiceClip: practiceCaptured, canPracticeClip: !training.active)
@@ -82,6 +84,8 @@ struct ContentView: View {
                             MoveLibraryView(filters: $practiceFilters, motions: practiceMotions, music: music, trainingActive: training.active, startPractice: { moves, title in
                                 practiceGenerated(moves, title: title)
                             }, offerMusicPractice: { musicPractice = $0 })
+                        case .music:
+                            MusicLibraryView(music: music, library: musicLibrary)
                         case .video:
                             VideoLibraryView(library: videoLibrary, video: video, captured: captured, published: published,
                                              onRecord: recordPractice, onPractice: {
@@ -99,7 +103,7 @@ struct ContentView: View {
                             }, practiceClip: practiceCaptured, canPracticeClip: !training.active)
                         case .history: HistoryView(store: training)
                         case .settings:
-                            PracticeSettingsView(aist: aist, trainingDirectory: training.dataDirectory) {
+                            PracticeSettingsView(aist: aist, trainingDirectory: training.dataDirectory, musicDirectory: musicLibrary.directory) {
                                 demonstration.applyCoordinatePreference()
                             }
                         case .resources: ResourcesView()
@@ -113,7 +117,10 @@ struct ContentView: View {
                         if training.canRetrySaving { Button("重试保存") { training.retrySaving() } }
                     }.padding(10).frame(maxWidth: .infinity, alignment: .leading).background(.red.opacity(0.06))
                 }
-                MusicBar(music: music, onPlayToggle: musicPlayAction)
+                MusicBar(music: music, library: musicLibrary, onPlayToggle: musicPlayAction, motionBPM: practiceMotionBPM, onOpenLibrary: {
+                    if practicing { leavePractice() }
+                    selection = .music
+                })
             }.background(ClubTheme.accent.opacity(0.025))
         }
         .toolbar(.hidden, for: .windowToolbar)
@@ -159,6 +166,15 @@ struct ContentView: View {
         aist.pause()
         practicing = false
         if practiceFullscreen { practiceFullscreen = false }
+    }
+
+    private var practiceMotionBPM: Double? {
+        guard practicing else { return nil }
+        switch trainingSource {
+        case .aist: return demonstration.reference?.sequence.bpm.map(Double.init) ?? demonstration.player.selected?.bpm.map(Double.init)
+        case .generated: return practiceMotions.beatBPM
+        case .captured, .none: return nil
+        }
     }
 
     private var musicPlayAction: (() -> Void)? {

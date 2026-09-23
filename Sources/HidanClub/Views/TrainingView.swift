@@ -41,8 +41,15 @@ struct TrainingView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     if source == .aist { sessionControls }
                     else if source == .generated { GeneratedSessionControls(training: store, practice: practice, music: music) }
-                    else if source == .captured { capturedControls }
+                    else if source == .captured {
+                        capturedControls
+                        if music.tempoMode == .music {
+                            Text("视频动作按原片时间播放。节拍倍数只带动有节拍记录的示范。")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
                     else { freePracticeControls }
+                    if let limit = tempoLimitNote { Text(limit).font(.caption2).foregroundStyle(.secondary) }
                     if displayMode == .overlay { overlayAdjustments.controlSize(.small) }
                     if displayMode != .demonstration { LivePoseCameraControls(camera: camera, compact: true) }
                     if source == .aist, let issue = demonstration.issue ?? store.demonstrationError {
@@ -73,6 +80,12 @@ struct TrainingView: View {
         .onChange(of: demonstration.reference?.sequence.bpm) { _, _ in shareBeat() }
         .onChange(of: practice.beatBPM) { _, _ in if source == .generated { shareBeat() } }
         .onChange(of: music.bpm) { _, _ in followSharedBeat() }
+        .onChange(of: music.trackBPM) { _, _ in followMusic() }
+        .onChange(of: music.beatMultiplier) { _, _ in followMusic() }
+        .onChange(of: music.rate) { _, _ in followMusic() }
+        .onChange(of: music.sourceURL) { _, _ in
+            if music.tempoMode == .music { followMusic() } else { shareBeat() }
+        }
         .onDisappear {
             demonstration.pause(); captured.pause(); practice.pause(); camera.stop(); music.pause()
         }
@@ -257,25 +270,41 @@ struct TrainingView: View {
         }
     }
 
-    /// The motion's recorded tempo and the metronome are one clock: BPM × playback speed.
+    /// Beat mode: the motion's recorded tempo and the metronome are one clock.
+    /// Music mode: the track's BPM, playback rate and beat multiple set the motion speed.
     private func shareBeat() {
-        guard !lockingTempo, let sourceBPM = sharedSourceBPM, sourceBPM > 0 else { return }
+        guard !lockingTempo else { return }
+        if music.tempoMode == .music { followMusic(); return }
+        guard let sourceBPM = sharedSourceBPM, sourceBPM > 0 else { return }
         lockingTempo = true
-        guard music.sourceURL == nil else { lockingTempo = false; return }
-        let locked = min(180, max(40, sourceBPM * motionSpeed))
+        let locked = MotionTempo.clampBeat(sourceBPM * motionSpeed)
         music.bpm = locked
-        setMotionSpeed(min(1, max(0.25, locked / sourceBPM)))
+        if let speed = MotionTempo.speed(motionBPM: sourceBPM, targetBPM: locked) { setMotionSpeed(speed) }
         lockingTempo = false
     }
 
     private func followSharedBeat() {
-        guard !lockingTempo, music.sourceURL == nil, let sourceBPM = sharedSourceBPM, sourceBPM > 0 else { return }
-        let speed = min(1, max(0.25, music.bpm / sourceBPM))
+        guard !lockingTempo, music.tempoMode == .beat, let sourceBPM = sharedSourceBPM, sourceBPM > 0 else { return }
+        let speed = MotionTempo.clampSpeed(music.bpm / sourceBPM)
         lockingTempo = true
         setMotionSpeed(speed)
-        let locked = min(180, max(40, sourceBPM * speed))
+        let locked = MotionTempo.clampBeat(sourceBPM * speed)
         if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
         lockingTempo = false
+    }
+
+    private func followMusic() {
+        guard !lockingTempo, music.tempoMode == .music, let target = music.motionBeatBPM,
+              let sourceBPM = sharedSourceBPM, let speed = MotionTempo.speed(motionBPM: sourceBPM, targetBPM: target) else { return }
+        lockingTempo = true
+        setMotionSpeed(speed)
+        lockingTempo = false
+    }
+
+    private var tempoLimitNote: String? {
+        guard music.tempoMode == .music, let target = music.motionBeatBPM, let sourceBPM = sharedSourceBPM,
+              !MotionTempo.canReach(motionBPM: sourceBPM, targetBPM: target) else { return nil }
+        return "动作速度只能到 0.25–2 倍，到不了音乐要求的 \(Int(target.rounded())) BPM。"
     }
 
     private func alignPracticeDownbeat() {

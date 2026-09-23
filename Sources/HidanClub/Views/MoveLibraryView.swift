@@ -38,14 +38,22 @@ struct MoveLibraryView: View {
             guard showingDetail, !motions.moves.isEmpty else { return }
             motions.open(motions.moves, title: motions.title, optimized: value != "raw")
         }
-        .onChange(of: showingDetail) { _, _ in publishMusicPractice() }
+        .onChange(of: showingDetail) { _, open in
+            if open { followMusicTempo() }
+            publishMusicPractice()
+        }
         .onChange(of: motions.loading) { _, _ in publishMusicPractice() }
         .onChange(of: motions.motion == nil) { _, _ in publishMusicPractice() }
-        .onChange(of: motions.speed) { _, speed in
-            guard music.sourceURL == nil, let bpm = motions.beatBPM else { return }
-            let locked = min(180, max(40, bpm * speed))
-            if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+        .onChange(of: motions.speed) { _, speed in syncBeat(from: speed) }
+        .onChange(of: music.bpm) { _, _ in followMusicTempo() }
+        .onChange(of: music.trackBPM) { _, _ in followMusicTempo() }
+        .onChange(of: music.beatMultiplier) { _, _ in followMusicTempo() }
+        .onChange(of: music.rate) { _, _ in followMusicTempo() }
+        .onChange(of: music.sourceURL) { _, _ in
+            if music.tempoMode == .music { followMusicTempo() }
+            else { syncBeat(from: motions.speed) }
         }
+        .onChange(of: motions.beatBPM) { _, _ in followMusicTempo() }
         .onDisappear { if !showingDetail { motions.pause() }; offerMusicPractice(nil) }
     }
 
@@ -154,13 +162,31 @@ struct MoveLibraryView: View {
                 Button("重置视角", systemImage: "arrow.counterclockwise") { motions.resetCamera += 1 }
                 Button { motions.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
                 Button { motions.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
-                Picker("速度", selection: $motions.speed) {
-                    ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                }.frame(width: 72).help("动作节拍速度。已导入的音乐仍按自己的播放速度。")
+                if music.tempoMode == .music, music.motionBeatBPM != nil {
+                    Text(String(format: "跟随音乐 %.2f×", motions.speed)).foregroundStyle(.secondary)
+                        .help("音乐模式下，动作速度由底部的节拍倍数决定。")
+                } else {
+                    Picker("速度", selection: $motions.speed) {
+                        ForEach(MotionTempo.speedChoices, id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
+                    }.frame(width: 78).help("动作节拍速度，和原创节拍是同一套。")
+                }
             }
             .controlSize(.small)
             .font(.caption)
         }
+    }
+
+    private func syncBeat(from speed: Double) {
+        guard music.tempoMode == .beat, let bpm = motions.beatBPM else { return }
+        let locked = MotionTempo.clampBeat(bpm * speed)
+        if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+    }
+
+    private func followMusicTempo() {
+        guard showingDetail, music.tempoMode == .music, let bpm = motions.beatBPM,
+              let target = music.motionBeatBPM,
+              let speed = MotionTempo.speed(motionBPM: bpm, targetBPM: target) else { return }
+        if abs(motions.speed - speed) > 0.01 { motions.speed = speed }
     }
 
     private func publishMusicPractice() {

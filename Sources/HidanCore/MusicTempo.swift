@@ -44,6 +44,7 @@ public enum MotionTempo {
     /// Playback speeds the motion players accept. 2× lets a reference clip recorded
     /// slower than a track still land one motion beat on each music beat.
     public static let speedRange: ClosedRange<Double> = 0.25...2
+    public static let speedChoices: [Double] = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2]
     /// BPM range of the built-in beat.
     public static let beatRange: ClosedRange<Double> = 40...180
     /// BPM values accepted for a track, whether estimated or typed in.

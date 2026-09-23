@@ -21,6 +21,8 @@ struct CoreProbe {
         print("PASS: pause exclusion; cross-block catch-up; exact completion date; no duplicate completion; honest skip/stop history; projected snapshots; backward timestamps; boundary transitions")
         try persistence()
         print("PASS: training plan and real session JSON round trips; effort input bounds")
+        try tempo()
+        print("PASS: bare clicks land on the beat or its octave; hi-hat grids within 1 BPM; short and aperiodic input rejected; beat multiples and speed limits")
         print("CORE PROBE PASSED: \(checks) checks. Foundation-only fallback; XCTest sources were not executed by this harness.")
     }
 
@@ -264,10 +266,95 @@ struct CoreProbe {
         let encodedSession = try JSONEncoder().encode(session)
         let restoredSession = try JSONDecoder().decode(FinishedSession.self, from: encodedSession)
         try expect(restoredSession == session, "Session persistence retains fractional actual time")
+        try tempoMath()
         for invalidEffort in [-1, 0, 11, Int.max] {
             let invalid = FinishedSession(planTitle: "Test", activeSeconds: 1, completedBlocks: 0,
                                           totalBlocks: 1, perceivedEffort: invalidEffort)
             try expect(invalid.perceivedEffort == nil, "Invalid effort \(invalidEffort) not stored")
         }
+    }
+
+    private static func tempo() throws {
+        let fps = 100.0
+        // A bare click has no hi-hat, so the estimate may land on the beat or its half.
+        // Integer frame periods keep rounding from inventing a third cycle.
+        for bpm in [75.0, 80, 100, 120, 125, 150] {
+            let estimate = try TempoEstimator.estimate(onsetEnvelope: clicks(bpm: bpm, fps: fps, seconds: 24), framesPerSecond: fps)
+            let ratio = estimate.bpm / bpm
+            let octave = abs(ratio - 1) < 0.02 || abs(ratio - 0.5) < 0.02 || abs(ratio - 2) < 0.02
+            try expect(octave, "Bare click \(bpm) estimated as \(estimate.bpm), not the beat or its double")
+            try expect(estimate.level == .high, "Clean click train was not high confidence")
+        }
+        // Eighth-note onsets stand in for a hi-hat and pick the quarter note rather than half time.
+        for bpm in [80.0, 100, 120, 150] {
+            var hatted = clicks(bpm: bpm, fps: fps, seconds: 24)
+            let eighth = 60 / (bpm * 2) * fps
+            var cursor = eighth
+            while Int(cursor.rounded()) < hatted.count {
+                hatted[Int(cursor.rounded())] = 0.45
+                cursor += eighth
+            }
+            let estimate = try TempoEstimator.estimate(onsetEnvelope: hatted, framesPerSecond: fps)
+            try expect(abs(estimate.bpm - bpm) < 1, "Hi-hat grid \(bpm) estimated as \(estimate.bpm)")
+        }
+        // A dotted 3:2 grid must not drag a 4/4 pulse onto the triplet.
+        let straight = clicks(bpm: 120, fps: fps, seconds: 24)
+        var dotted = straight
+        let triplet = 60 / 180.0 * fps
+        var cursor = 0.0
+        while Int(cursor) < dotted.count { dotted[Int(cursor)] += 0.35; cursor += triplet }
+        let mixed = try TempoEstimator.estimate(onsetEnvelope: dotted, framesPerSecond: fps)
+        try expect(abs(mixed.bpm - 120) < 1, "Dotted grid pulled 120 BPM to \(mixed.bpm)")
+
+        try expectError(TempoEstimationError.invalidInput) { _ = try TempoEstimator.estimate(onsetEnvelope: [1, .nan], framesPerSecond: fps) }
+        try expectError(TempoEstimationError.invalidInput) { _ = try TempoEstimator.estimate(onsetEnvelope: [1, 1], framesPerSecond: 0) }
+        try expectError(TempoEstimationError.tooShort) { _ = try TempoEstimator.estimate(onsetEnvelope: clicks(bpm: 120, fps: fps, seconds: 3), framesPerSecond: fps) }
+        try expectError(TempoEstimationError.noPeriodicity) {
+            _ = try TempoEstimator.estimate(onsetEnvelope: Array(repeating: 0, count: Int(fps * 16)), framesPerSecond: fps)
+        }
+        let restored = try JSONDecoder().decode(TempoEstimate.self, from: JSONEncoder().encode(TempoEstimate(bpm: 96, confidence: 0.4)))
+        try expect(restored.bpm == 96 && restored.level == .high, "Tempo estimate did not round-trip")
+        try expect(TempoConfidence(0.2) == .medium && TempoConfidence(0.05) == .low, "Confidence bands moved")
+    }
+
+    private static func tempoMath() throws {
+        try expect(MotionTempo.clampSpeed(.nan) == 1 && MotionTempo.clampSpeed(3) == 2 && MotionTempo.clampSpeed(0.1) == 0.25, "Speed clamp")
+        try expect(MotionTempo.clampBeat(.nan) == 90 && MotionTempo.clampBeat(10) == 40 && MotionTempo.clampBeat(400) == 180, "Beat clamp")
+        try expect(MotionTempo.isValidTrackBPM(30) && MotionTempo.isValidTrackBPM(300) && !MotionTempo.isValidTrackBPM(29) && !MotionTempo.isValidTrackBPM(.infinity), "Track BPM bounds")
+        try expect(MotionTempo.speed(motionBPM: 80, targetBPM: 120) == 1.5, "Motion speed is target / recorded")
+        try expect(MotionTempo.speed(motionBPM: 50, targetBPM: 200) == 2, "Unreachable tempo clamps to 2×")
+        try expect(MotionTempo.canReach(motionBPM: 80, targetBPM: 120) && !MotionTempo.canReach(motionBPM: 50, targetBPM: 200), "Reachability")
+        try expect(MotionTempo.speed(motionBPM: 0, targetBPM: 100) == nil && MotionTempo.musicTarget(trackBPM: .nan, rate: 1, multiplier: .single) == nil, "Unusable tempos stay absent")
+        try expect(MotionTempo.musicTarget(trackBPM: 100, rate: 0.75, multiplier: .double) == 150, "Music tempo is BPM × rate × multiple")
+        try expect(BeatMultiplier.double.rawValue == 2 && BeatMultiplier.quarter.summary == "四拍一动", "Beat multiples")
+        for speed in [0.25, 1.1, 2.0] {
+            _ = try AISTPracticeReference(sequence: tempoSequence(), name: "x", startFrame: 0, endFrame: 1, optimized: true, speed: speed)
+        }
+        for speed in [0.0, 0.24, 2.01, Double.nan] {
+            try expectError(AISTPracticeError.invalidSpeed) {
+                _ = try AISTPracticeReference(sequence: tempoSequence(), name: "x", startFrame: 0, endFrame: 1, optimized: true, speed: speed)
+            }
+        }
+    }
+
+    /// One sample at each beat, long enough for the slowest accepted period.
+    private static func clicks(bpm: Double, fps: Double, seconds: Double) -> [Double] {
+        let count = Int(fps * seconds)
+        var envelope = [Double](repeating: 0, count: count)
+        let step = 60 / bpm * fps
+        var cursor = 0.0
+        while Int(cursor.rounded()) < count {
+            envelope[Int(cursor.rounded())] = 1
+            cursor += step
+        }
+        return envelope
+    }
+
+    /// AISTPracticeReference checks frame count, fps and speed. Paths are not opened.
+    private static func tempoSequence() -> AISTSequence {
+        let json = """
+        {"id":"gMH_sBM_cAll_d01_mMH0_ch01","genreCode":"gMH","genreName":"Hip-hop","dancerID":"d01","musicID":"mMH0","frameCount":8,"fps":60,"rawPath":"sequences/gMH_sBM_cAll_d01_mMH0_ch01.raw.f64","optimizedPath":"sequences/gMH_sBM_cAll_d01_mMH0_ch01.optimized.f64","byteCount":3264,"ignored":false}
+        """.data(using: .utf8)!
+        return try! JSONDecoder().decode(AISTSequence.self, from: json)
     }
 }

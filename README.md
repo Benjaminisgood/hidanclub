@@ -22,6 +22,7 @@
 ./script/qa_video_library.sh
 ./script/qa_pose_arrangement.sh
 ./script/qa_video_motion_library.sh
+./script/qa_music_library.sh
 ./script/qa_library_import.sh        # 需要一份真实导出的动作模型 JSON
 ./script/qa_library_import_ui.sh     # 同上，另存离屏渲染 PNG 到 output/qa-library-import
 ```
@@ -34,7 +35,7 @@ Codex 的 Run 按钮已连接到同一脚本。构建结果：`dist/HidanClub.ap
 - 动作库与编排库支持从 JSON 文件导入：接受完整的二维动作模型导出（`*.hidanclub.json`）或裸识别报告。导入只读取原文件，保存独立副本，保留全部原始帧、置信度与原始 PTS；动作库使用文件自带的片段范围，编排库保留全部片段顺序与重复次数。编排库新增「视频动作编排」列表，可直接进入训练台跟练。
 - 训练台内嵌真实 AIST++ 示范：四种训练风格各 3 个真实命名动作，10–45 分钟计划每个练习段有对应模型，开始／暂停／换段联动。热身和休息显示下一动作预告。
 - 实时摄像头跟练：本机 Vision 二维关节捕捉、入镜指导、可见关节与肘膝投影角度；并排、仅示范、仅摄像头、透明叠加四种显示方式。
-- 原创八拍节拍、本地音频、速度/音量控制。
+- 左侧「音乐库」放两类东西：多套原创八拍（各自记住一个速度），以及导入后永久保存的本地音乐。两种播放器样式不同。音乐在本机估计一个整体 BPM，可手改；动作按 ¼×、½×、1×、2× 跟随，不改音乐本身。估计没有第一拍，短于约 8 秒或没有稳定周期时需要手填 BPM。视频动作仍按原片时间播放。
 - 视频库：多选导入并原字节保存视频，训练台可手动录像并自动入库，重启后继续回放。录像为当前相机尺寸的画面，不录音、不叠加示范或骨架。
 - 本机 Vision 肢体识别后，可依据全帧动作变化生成分段建议；显式应用后调整 A–B、顺序和重复次数，再导入动作库或编排库。没有重新生成舞步或过渡动画。
 - 原视频播放、镜像、慢放、A–B 循环保留，用于核对捕捉结果。
@@ -77,7 +78,7 @@ python3 script/aist_dataset.py --verify-only
 
 ## 数据
 
-数据位于 `~/Library/Application Support/HidanClub/`：`Videos/` 保存原视频和视频条目，`CapturedMotions/` 保存完整二维识别模型，`VideoMotionLibrary/` 保存导入动作库/编排库的独立副本（含从 JSON 文件导入的副本），`PendingRecordings/` 保留录像原件。相应隔离变量为 `HIDAN_VIDEO_DIR`、`HIDAN_CAPTURE_DIR`、`HIDAN_PUBLISHED_DIR`。所有分析在本机进行，完整原始帧和时间戳保留；损坏记录不静默覆盖。
+数据位于 `~/Library/Application Support/HidanClub/`：`Videos/` 保存原视频和视频条目，`CapturedMotions/` 保存完整二维识别模型，`VideoMotionLibrary/` 保存导入动作库/编排库的独立副本（含从 JSON 文件导入的副本），`Music/` 保存导入音乐的原字节、估计节拍和手动 BPM，`PendingRecordings/` 保留录像原件。相应隔离变量为 `HIDAN_VIDEO_DIR`、`HIDAN_CAPTURE_DIR`、`HIDAN_PUBLISHED_DIR`、`HIDAN_MUSIC_DIR`。所有分析在本机进行，完整原始帧和时间戳保留；损坏记录不静默覆盖。
 
 历史位于 `history.json`，可用 `HIDAN_DATA_DIR` 隔离。正常退出会等待录像完成和入库，再保存当前练习；强制结束或崩溃不保证录像完成，运行中的练习也不跨启动恢复。
 

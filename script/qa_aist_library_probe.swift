@@ -102,7 +102,7 @@ private struct AISTLibraryProbeFailure: Error, CustomStringConvertible {
         store.restoreReference(reference)
         try await wait("restore initial reference again") { !store.loading && store.motion != nil }
 
-        for (input, expected) in [(Double.nan, 1.0), (.infinity, 1.0), (2.0, 1.0), (0.0, 0.25)] {
+        for (input, expected) in [(Double.nan, 1.0), (.infinity, 1.0), (2.0, 2.0), (2.5, 2.0), (0.0, 0.25)] {
             store.speed = input
             try check(store.speed == expected, "Playback speed did not normalize to supported full-frame range")
         }

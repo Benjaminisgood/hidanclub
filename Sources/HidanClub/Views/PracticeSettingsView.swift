@@ -9,6 +9,7 @@ enum CoordinateLayerPreference {
 struct PracticeSettingsView: View {
     @ObservedObject var aist: AISTLibraryStore
     let trainingDirectory: URL
+    let musicDirectory: URL
     @AppStorage("aist.visualStyle") private var visualStyle: AISTVisualStyle = .porcelain
     @AppStorage("aist.skeletonOverlay") private var skeletonOverlay = false
     @AppStorage("aist.showReferenceGrid") private var showReferenceGrid = false
@@ -128,6 +129,11 @@ struct PracticeSettingsView: View {
                     try? FileManager.default.createDirectory(at: trainingDirectory, withIntermediateDirectories: true)
                     NSWorkspace.shared.open(trainingDirectory)
                 }
+                Button("打开音乐库目录") {
+                    try? FileManager.default.createDirectory(at: musicDirectory, withIntermediateDirectories: true)
+                    NSWorkspace.shared.open(musicDirectory)
+                }
+                Text("导入的音乐保存在音乐库目录，重启后仍可播放。节拍在本机识别。").font(.caption2).foregroundStyle(.secondary)
             }
         }
     }

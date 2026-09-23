@@ -102,6 +102,21 @@ extension MusicService {
         music.useBeat(); music.play(); try await wait(0.1)
         try check(music.errorMessage == nil && music.isPlaying && music.sourceFormat.sampleRate == 44100, "switch back to beat failed")
         music.stop()
-        print("PASS: silent beat/file playback, pause/resume position, live BPM, stop/reset, format switches and repeated file loops")
+        let trackURL = directory.appendingPathComponent("test-44100-1.wav")
+        let trackID = UUID()
+        music.loadTrack(id: trackID, name: "Probe track", url: trackURL, bpm: 100)
+        try check(music.tempoMode == .music && music.trackID == trackID && music.trackName == "Probe track" && music.trackBPM == 100, "library track did not keep its tempo")
+        music.beatMultiplier = .double
+        music.rate = 0.75
+        try check(music.motionBeatBPM == 150, "motion tempo is not track BPM × rate × multiple")
+        music.beatMultiplier = .half
+        try check(music.motionBeatBPM == 37.5, "half-time multiple did not halve the motion tempo")
+        music.load(url: trackURL)
+        try check(music.trackID == nil && music.trackBPM == nil && music.motionBeatBPM == nil, "a file without a library record kept a tempo")
+        music.useBeat()
+        try check(music.tempoMode == .beat && music.motionBeatBPM == music.bpm && music.trackID == nil, "beat mode did not clear the track")
+        music.bpm = 200
+        try check(music.bpm == 180, "beat upper bound changed")
+        print("PASS: silent beat/file playback, pause/resume position, live BPM, stop/reset, format switches, repeated file loops, and music-mode tempo multiples")
     }
 }

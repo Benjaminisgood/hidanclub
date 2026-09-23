@@ -41,7 +41,8 @@ import HidanCore
         for (first, last) in [(-1, 2), (2, 1), (0, sequence.frameCount), (Int.min, Int.max)] {
             expectFailure { _ = try AISTPracticeReference(sequence: sequence, name: "x", startFrame: first, endFrame: last, optimized: false, speed: 1) }
         }
-        for speed in [0.0, -1.0, Double.nan, .infinity, 0.1, 1.1, 2.0] {
+        _ = try AISTPracticeReference(sequence: sequence, name: "double time", startFrame: 0, endFrame: 1, optimized: true, speed: 2)
+        for speed in [0.0, -1.0, Double.nan, .infinity, 0.1, 2.01] {
             expectFailure { _ = try AISTPracticeReference(sequence: sequence, name: "x", startFrame: 0, endFrame: 1, optimized: true, speed: speed) }
         }
         expectFailure { _ = try AISTPracticeReference(sequence: sequence, name: " \n", startFrame: 0, endFrame: 1, optimized: true, speed: 1) }

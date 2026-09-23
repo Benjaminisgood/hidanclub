@@ -12,6 +12,7 @@ struct AISTLibraryView: View {
     @ObservedObject var store: AISTLibraryStore
     @ObservedObject var training: TrainingStore
     @ObservedObject var music: MusicService
+    @ObservedObject var musicLibrary: MusicLibraryStore
     @ObservedObject var arrangements: AISTArrangementStore
     @ObservedObject var clips: CapturedLibraryStore
     @Binding var filters: AISTLibraryFilters
@@ -56,15 +57,21 @@ struct AISTLibraryView: View {
         }
         .onChange(of: showDetail) { _, open in
             if !open { store.pause() }
+            if open { followMusicTempo() }
             publishMusicPractice()
         }
         .onChange(of: store.loading) { _, _ in publishMusicPractice() }
         .onChange(of: store.motion == nil) { _, _ in publishMusicPractice() }
-        .onChange(of: store.speed) { _, speed in
-            guard music.sourceURL == nil, let bpm = store.selected?.bpm else { return }
-            let locked = min(180, max(40, Double(bpm) * speed))
-            if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+        .onChange(of: store.speed) { _, speed in syncBeat(from: speed) }
+        .onChange(of: music.bpm) { _, _ in followMusicTempo() }
+        .onChange(of: music.trackBPM) { _, _ in followMusicTempo() }
+        .onChange(of: music.beatMultiplier) { _, _ in followMusicTempo() }
+        .onChange(of: music.rate) { _, _ in followMusicTempo() }
+        .onChange(of: music.sourceURL) { _, _ in
+            if music.tempoMode == .music { followMusicTempo() }
+            else { syncBeat(from: store.speed) }
         }
+        .onChange(of: store.selected?.bpm) { _, _ in followMusicTempo() }
         .onDisappear { store.pause(); offerMusicPractice(nil) }
         .sheet(isPresented: $showDataInfo) { dataInfo }
         .sheet(isPresented: $showStylePlan) { stylePlan }
@@ -73,13 +80,14 @@ struct AISTLibraryView: View {
     private var gallery: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("动作库").font(.system(size: 28, weight: .bold))
                     Text("列表用原始逐帧重建自动播放。点开或练习时默认用官方时序优化，可在设置里更换。")
                         .font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
                 LibraryImportButton(title: "导入 JSON…", destination: .actions, store: clips, notice: $importNotice) { results in
                     // Reveal what was just published instead of leaving it hidden
                     // behind a category that does not list 我的动作.
@@ -89,7 +97,9 @@ struct AISTLibraryView: View {
                 Button("风格练习…") {
                     planStyle = training.style; planMinutes = training.minutes; planLevel = training.level
                     showStylePlan = true
-                }.disabled(training.active)
+                }
+                .disabled(training.active)
+                .fixedSize()
             }
             filterBar
             LibraryImportStatus(store: clips, notice: importNotice)
@@ -146,20 +156,23 @@ struct AISTLibraryView: View {
     private var filterBar: some View {
         HStack(spacing: 10) {
             TextField("搜索动作、舞者或音乐编号", text: $filters.search).textFieldStyle(.roundedBorder)
+                .frame(minWidth: 120)
                 .accessibilityIdentifier("aist.search")
             Picker("舞种", selection: $filters.genre) {
                 Text("全部舞种").tag("all")
                 ForEach(genres, id: \.0) { item in Text(item.1).tag(item.0) }
-            }.frame(width: 150)
+            }.frame(width: 150).layoutPriority(1)
             Picker("分类", selection: $filters.category) {
                 Text("全部").tag("all")
                 Text("收藏").tag("favorite")
                 Text("基础").tag("basic")
                 Text("进阶").tag("advanced")
                 Text("我的").tag("mine")
-            }.frame(width: 120)
+            }.frame(width: 120).layoutPriority(1)
             Text(filters.category == "mine" ? "\(visibleClips.count)" : "\(results.count)")
                 .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                .fixedSize()
+                .layoutPriority(1)
         }
     }
 
@@ -278,9 +291,14 @@ struct AISTLibraryView: View {
                 Button("重置视角", systemImage: "arrow.counterclockwise") { store.resetCamera += 1 }
                 Button { store.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
                 Button { store.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
-                Picker("速度", selection: $store.speed) {
-                    ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                }.frame(width: 72).help("动作节拍速度。已导入的音乐仍按自己的播放速度。")
+                if music.tempoMode == .music, music.motionBeatBPM != nil {
+                    Text(String(format: "跟随音乐 %.2f×", store.speed)).foregroundStyle(.secondary)
+                        .help("音乐模式下，动作速度由底部的节拍倍数决定。")
+                } else {
+                    Picker("速度", selection: $store.speed) {
+                        ForEach(MotionTempo.speedChoices, id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
+                    }.frame(width: 78).help("动作节拍速度，和原创节拍是同一套。")
+                }
             }
             .controlSize(.small)
             .font(.caption)
@@ -293,8 +311,9 @@ struct AISTLibraryView: View {
                 Toggle("循环", isOn: $store.loopEnabled).toggleStyle(.checkbox)
                 Button("节拍", systemImage: "metronome") {
                     guard let bpm = sequence.bpm else { return }
-                    music.useBeat(); music.bpm = min(180, max(40, Double(bpm) * store.speed)); music.play()
-                }.disabled(sequence.bpm == nil).help("按这段音乐的 BPM 播放原创节拍，尚未对齐第一拍")
+                    musicLibrary.detachLibrarySelection()
+                    music.useBeat(); music.bpm = MotionTempo.clampBeat(Double(bpm) * store.speed); music.play()
+                }.disabled(sequence.bpm == nil).help("按这段动作的 BPM 播放原创节拍，尚未对齐第一拍")
                 Button("加入编排", systemImage: "text.badge.plus") {
                     do {
                         try arrangements.add(reference: store.practiceReference())
@@ -313,6 +332,19 @@ struct AISTLibraryView: View {
     }
 
     private var practiceRounds: Int { [2, 4, 6].contains(defaultRounds) ? defaultRounds : 4 }
+
+    private func syncBeat(from speed: Double) {
+        guard music.tempoMode == .beat, let bpm = store.selected?.bpm else { return }
+        let locked = MotionTempo.clampBeat(Double(bpm) * speed)
+        if abs(music.bpm - locked) > 0.51 { music.bpm = locked }
+    }
+
+    private func followMusicTempo() {
+        guard showDetail, music.tempoMode == .music, let bpm = store.selected?.bpm,
+              let target = music.motionBeatBPM,
+              let speed = MotionTempo.speed(motionBPM: Double(bpm), targetBPM: target) else { return }
+        if abs(store.speed - speed) > 0.01 { store.speed = speed }
+    }
 
     private func publishMusicPractice() {
         if showDetail, store.motion != nil, !store.loading {

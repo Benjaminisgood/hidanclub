@@ -65,7 +65,16 @@ import UniformTypeIdentifiers
 
     func useBeat() {
         stop(); file = nil; sourceURL = nil; trackID = nil; trackBPM = nil; rate = 1
-        trackName = "Club beat · 原创节拍"; errorMessage = nil; prepareBeat()
+        trackName = "原创节拍"; errorMessage = nil; prepareBeat()
+    }
+
+    /// Switches to the synthesized beat and applies a saved preset's name and tempo.
+    func useNamedBeat(name: String, bpm: Double, resume: Bool) {
+        useBeat()
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { trackName = trimmed }
+        self.bpm = MotionTempo.clampBeat(bpm)
+        if resume { play() }
     }
 
     /// Plays a file as-is without a library record; it has no tempo of its own.
