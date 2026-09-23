@@ -67,21 +67,16 @@ import HidanCore
             throw Failure(message: "Isolated library must start empty")
         }
 
-        // Exactly what the two page buttons call after the file picker returns.
+        // Exactly what the 动作库 import button calls after the file picker returns.
         let actionResults = drain { await published.importFiles([sourceURL], to: .actions) }
-        let arrangementResults = drain { await published.importFiles([sourceURL], to: .arrangements) }
-        guard let action = actionResults.first?.published, let arrangement = arrangementResults.first?.published else {
-            throw Failure(message: "Import failed: \(actionResults.first?.problem ?? "") \(arrangementResults.first?.problem ?? "")")
+        guard let action = actionResults.first?.published else {
+            throw Failure(message: "Import failed: \(actionResults.first?.problem ?? "")")
         }
-        let notice = LibraryImportNotice.text(actionResults + arrangementResults, destination: .arrangements)
+        guard published.arrangements.isEmpty else {
+            throw Failure(message: "动作库导入不应写入编排库")
+        }
+        let notice = LibraryImportNotice.text(actionResults, destination: .actions)
         guard try Data(contentsOf: sourceURL) == sourceBytes else { throw Failure(message: "Source file changed") }
-
-        // 编排库: the production section that lists published 2D arrangements,
-        // rendered without the page's scroll container so it is fully visible.
-        var sectionNotice: String? = LibraryImportNotice.text(arrangementResults, destination: .arrangements)
-        let section = CapturedArrangementSection(published: published, notice: Binding(get: { sectionNotice }, set: { sectionNotice = $0 }),
-                                                 practiceClip: { _ in }, canPracticeClip: true)
-        try render(section, width: 1180, height: 620, to: pngDir.appendingPathComponent("arrangement-section.png"))
 
         // 动作库: the production player and controls an imported clip opens into.
         let playback = CapturedMotionPlayback()
@@ -105,9 +100,8 @@ import HidanCore
         }.padding(22)
         try render(actionCard, width: 320, height: 380, to: pngDir.appendingPathComponent("action-card.png"))
 
-        print("Library import UI probe passed: 编排库 arrangement section, 动作库 player, import control and clip card rendered from real imports.")
+        print("Library import UI probe passed: 动作库 player, import control and clip card rendered from real imports.")
         print("  action: \(action.name) · \(action.frameCount) 帧 · 片段 \(action.segments.map { "\($0.startFrame)-\($0.endFrame)x\($0.repeats)" }.joined(separator: ",")) · \(String(format: "%.2f", action.segments.reduce(0) { $0 + action.duration(of: $1) * Double($1.repeats) })) 秒")
-        print("  arrangement: \(arrangement.name) · \(arrangement.segments.count) 个片段 · \(arrangement.segments.map(\.name).joined(separator: " → "))")
         print("  notice: \(notice.replacingOccurrences(of: "\n", with: " / "))")
         print("  png: \(pngDir.path)")
     }

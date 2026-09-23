@@ -100,7 +100,7 @@ import AppKit
                     try? FileManager.default.createDirectory(at: training.dataDirectory, withIntermediateDirectories: true)
                     NSWorkspace.shared.open(training.dataDirectory)
                 }
-                Text("视频库保存原视频，并在本页识别肢体。截出的一段收入动作库；动作库和编排库也可以从 JSON 文件导入，导入只读取原文件并保存独立副本。导入的音乐保存在本机音乐库，节拍在本机识别。当前识别为二维关节，不自动命名舞步或评分。外观和默认画面在应用内的设置页。")
+                Text("视频库保存原视频，并在本页识别肢体。截出的一段收入动作库；动作库也可以从 JSON 文件导入，导入只读取原文件并保存独立副本。编排库只收动作库里的三维片段。导入的音乐保存在本机音乐库，节拍在本机识别。当前识别为二维关节，不自动命名舞步或评分。外观和默认画面在应用内的设置页。")
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(28).frame(width: 440)
         }

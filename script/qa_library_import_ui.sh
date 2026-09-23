@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Offscreen render of the production import UI. An isolated library is filled
 # through the production import path with a real exported motion file, then the
-# real 编排库 page, 动作库 detail, import control and clip card are rendered to
+# real 动作库 detail, import control and clip card are rendered to
 # PNG. The user's real library is never touched.
 # usage: script/qa_library_import_ui.sh [motion.json]
 set -euo pipefail

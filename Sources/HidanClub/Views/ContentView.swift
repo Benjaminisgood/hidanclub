@@ -3,7 +3,7 @@ import SwiftUI
 import HidanCore
 
 enum ClubPage: String, CaseIterable, Identifiable {
-    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习记录", settings = "设置", resources = "资源与研究"
+    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习录", settings = "设置", resources = "资源与研究"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -94,13 +94,13 @@ struct ContentView: View {
                                 beginPractice(.captured)
                             }, canPractice: !training.active)
                         case .sequence:
-                            SequenceView(arrangements: arrangements, published: published, onPracticeAIST: { references, name in
+                            SequenceView(arrangements: arrangements, onPracticeAIST: { references, name in
                                 do {
                                     if training.active { demonstration.stop() }
                                     try training.prepareArrangement(references: references, name: name)
                                     beginPractice(.aist)
                                 } catch { arrangements.errorMessage = error.localizedDescription }
-                            }, practiceClip: practiceCaptured, canPracticeClip: !training.active)
+                            })
                         case .history: HistoryView(store: training)
                         case .settings:
                             PracticeSettingsView(aist: aist, trainingDirectory: training.dataDirectory, musicDirectory: musicLibrary.directory) {
