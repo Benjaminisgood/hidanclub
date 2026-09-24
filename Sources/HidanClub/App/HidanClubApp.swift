@@ -5,7 +5,8 @@ import AppKit
     @NSApplicationDelegateAdaptor(ClubAppDelegate.self) private var appDelegate
     @StateObject private var training: TrainingStore
     @StateObject private var demonstration: TrainingDemonstrationStore
-    @StateObject private var camera = LivePoseCamera()
+    @StateObject private var camera: LivePoseCamera
+    @StateObject private var party: PartyService
     @StateObject private var captured = CapturedMotionStore()
     @StateObject private var arrangements = AISTArrangementStore()
     @StateObject private var music = MusicService()
@@ -25,11 +26,14 @@ import AppKit
         let store = TrainingStore()
         _training = StateObject(wrappedValue: store)
         _demonstration = StateObject(wrappedValue: TrainingDemonstrationStore(training: store))
+        let camera = LivePoseCamera()
+        _camera = StateObject(wrappedValue: camera)
+        _party = StateObject(wrappedValue: PartyService(frameTap: camera.frameTap))
     }
 
     var body: some Scene {
         WindowGroup(Bundle.main.bundleIdentifier?.contains(".qa.") == true ? "Hidan QA · 隔离测试" : "Hidan Club") {
-            ContentView(training: training, music: music, video: video, analyzer: analyzer, aist: aist, demonstration: demonstration, camera: camera, captured: captured, arrangements: arrangements, videoLibrary: videoLibrary, published: published, practiceMotions: practiceMotions, musicLibrary: musicLibrary)
+            ContentView(training: training, music: music, video: video, analyzer: analyzer, aist: aist, demonstration: demonstration, camera: camera, captured: captured, arrangements: arrangements, videoLibrary: videoLibrary, published: published, practiceMotions: practiceMotions, musicLibrary: musicLibrary, party: party)
                 .disabled(isTerminating)
                 .overlay {
                     if isTerminating {
@@ -39,6 +43,7 @@ import AppKit
                 .tint(ClubTheme.accent)
                 .frame(minWidth: 1100, minHeight: 740)
                 .onAppear {
+                    party.attachBeatPlayer(music)
                     camera.onRecordingSaved = { url in
                         let importID = UUID()
                         recordingImports[importID] = Task {
@@ -66,8 +71,8 @@ import AppKit
                             catch { videoLibrary.errorMessage = "录像恢复目录无法打开：\(error.localizedDescription)" }
                         }
                     }
-                    training.onPauseForSleep = { demonstration.pause(); music.pause(); video.pause(); aist.pause(); camera.stop(); captured.pause(); practiceMotions.pause() }
-                    appDelegate.beforeTerminate = { demonstration.stop(); training.retrySaving(); music.stop(); musicLibrary.cancelAnalyses(); analyzer.cancel(); aist.pause(); camera.stop(); captured.pause(); practiceMotions.pause() }
+                    training.onPauseForSleep = { demonstration.pause(); music.pause(); video.pause(); aist.pause(); party.leave(); camera.stop(); captured.pause(); practiceMotions.pause() }
+                    appDelegate.beforeTerminate = { demonstration.stop(); training.retrySaving(); music.stop(); musicLibrary.cancelAnalyses(); analyzer.cancel(); aist.pause(); party.leave(); camera.stop(); captured.pause(); practiceMotions.pause() }
                 }
                 .onChange(of: training.clock.state) { _, newValue in
                     if newValue == .paused {
@@ -95,7 +100,7 @@ import AppKit
                     Text("Hidan Club").font(.title2.bold())
                 }
                 Text("本地优先的街舞学习原型 · 0.5.0").foregroundStyle(.secondary)
-                Text("导入视频与训练录像保存在这台 Mac 的视频库，重启后仍可播放。身体关节识别在本机完成，不向云端上传。")
+                Text("导入视频与训练录像保存在这台 Mac 的视频库，重启后仍可播放。身体关节识别在本机完成，不向云端上传。「一起跳」把画面直接发给同一网络里的好友，不经过服务器，也不保存。")
                 Button("打开训练记录目录") {
                     try? FileManager.default.createDirectory(at: training.dataDirectory, withIntermediateDirectories: true)
                     NSWorkspace.shared.open(training.dataDirectory)

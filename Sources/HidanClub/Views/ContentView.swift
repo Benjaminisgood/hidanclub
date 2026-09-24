@@ -3,7 +3,7 @@ import SwiftUI
 import HidanCore
 
 enum ClubPage: String, CaseIterable, Identifiable {
-    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", history = "练习录", settings = "设置页", resources = "资源库"
+    case library = "动作库", basics = "基本功", video = "视频库", music = "音乐库", sequence = "编排库", party = "一起跳", history = "练习录", settings = "设置页", resources = "资源库"
     var id: String { rawValue }
     var icon: String {
         switch self {
@@ -12,6 +12,7 @@ enum ClubPage: String, CaseIterable, Identifiable {
         case .video: return "play.rectangle"
         case .music: return "music.note.list"
         case .sequence: return "square.stack.3d.up"
+        case .party: return "person.2.wave.2"
         case .history: return "calendar"
         case .settings: return "gearshape"
         case .resources: return "books.vertical"
@@ -33,6 +34,7 @@ struct ContentView: View {
     @ObservedObject var published: CapturedLibraryStore
     @ObservedObject var practiceMotions: PracticeMotionStore
     @ObservedObject var musicLibrary: MusicLibraryStore
+    @ObservedObject var party: PartyService
     @State private var trainingSource: TrainingSource = .none
     @State private var selection: ClubPage? = .library
     @State private var practicing = false
@@ -60,6 +62,11 @@ struct ContentView: View {
                 }.listStyle(.sidebar)
                 VStack(alignment: .leading, spacing: 10) {
                     Divider()
+                    if party.isConnected, let peer = party.peer {
+                        Label("正在与 \(peer.name) 一起跳", systemImage: "person.2.wave.2").font(.caption).foregroundStyle(ClubTheme.accent).lineLimit(1)
+                    } else if party.isHosting {
+                        Label("房间已开启 · \(party.roomCode)", systemImage: "door.left.hand.open").font(.caption).foregroundStyle(ClubTheme.accent).lineLimit(1)
+                    }
                     Label("属于你的练习空间", systemImage: "sparkle").font(.caption).foregroundStyle(.secondary)
                     Text("一步一步，找到自己的风格。").font(.caption2).foregroundStyle(.tertiary)
                 }.padding(16)
@@ -101,6 +108,8 @@ struct ContentView: View {
                                     beginPractice(.aist)
                                 } catch { arrangements.errorMessage = error.localizedDescription }
                             })
+                        case .party:
+                            PartyView(party: party, camera: camera, music: music)
                         case .history: HistoryView(store: training)
                         case .settings:
                             PracticeSettingsView(aist: aist, trainingDirectory: training.dataDirectory, musicDirectory: musicLibrary.directory) {

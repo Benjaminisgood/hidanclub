@@ -241,7 +241,8 @@ import SwiftUI
     }
 }
 
-private struct LivePoseCameraSkeleton: View {
+/// Shared by the local preview and the friend's tile: same colours, same aspect-fit mapping.
+struct LivePoseCameraSkeleton: View {
     let observation: LivePoseObservation
     let mirrored: Bool
     let imageRect: CGRect

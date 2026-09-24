@@ -23,6 +23,8 @@ struct CoreProbe {
         print("PASS: training plan and real session JSON round trips; effort input bounds")
         try tempo()
         print("PASS: bare clicks land on the beat or its octave; hi-hat grids within 1 BPM; short and aperiodic input rejected; beat multiples and speed limits")
+        try party()
+        print("PASS: party framing under arbitrary chunking with corrupt-stream rejection; typed JSON messages and binary video packets round trip; clock offset from the quietest sample; next eight-count on the shared grid; address and room-code parsing")
         print("CORE PROBE PASSED: \(checks) checks. Foundation-only fallback; XCTest sources were not executed by this harness.")
     }
 
@@ -335,6 +337,111 @@ struct CoreProbe {
                 _ = try AISTPracticeReference(sequence: tempoSequence(), name: "x", startFrame: 0, endFrame: 1, optimized: true, speed: speed)
             }
         }
+    }
+
+    private static func party() throws {
+        let frames = [
+            PartyFrame(kind: .control, payload: Data("{\"type\":\"stop\"}".utf8)),
+            PartyFrame(kind: .video, payload: Data((0..<5_000).map { UInt8($0 & 0xFF) })),
+            PartyFrame(kind: .control, payload: Data())
+        ]
+        let stream = frames.map { $0.encoded() }.reduce(Data(), +)
+        for chunk in [1, 3, 7, 64, 4_096, stream.count] {
+            var decoder = PartyFrameDecoder()
+            var received: [PartyFrame] = []
+            var cursor = stream.startIndex
+            while cursor < stream.endIndex {
+                let end = min(cursor + chunk, stream.endIndex)
+                received += try decoder.append(stream[cursor..<end])
+                cursor = end
+            }
+            try expect(received == frames && decoder.bufferedByteCount == 0, "Frames survive \(chunk)-byte chunking")
+        }
+        var oversize = PartyFrameDecoder()
+        var header = Data(); header.appendBigEndian(UInt32(PartyProtocol.maxFrameLength + 1))
+        try expectError(PartyFrameError.frameTooLarge(PartyProtocol.maxFrameLength + 1)) { _ = try oversize.append(header) }
+        var empty = PartyFrameDecoder()
+        try expectError(PartyFrameError.emptyFrame) { _ = try empty.append(Data([0, 0, 0, 0])) }
+        var unknown = PartyFrameDecoder()
+        try expectError(PartyFrameError.unknownKind(9)) { _ = try unknown.append(Data([0, 0, 0, 2, 9, 1])) }
+        var partial = PartyFrameDecoder()
+        try expect(try partial.append(Data([0, 0, 0, 3, 1, 0x7B])).isEmpty && partial.bufferedByteCount == 6, "Incomplete frame waits for more bytes")
+
+        let pose = PartyPose(observation: LivePoseObservation(frameNumber: 3, timestamp: 0.1, width: 640, height: 480, bodyCount: 1, joints: [
+            "nose": LivePosePoint(x: 0.5, y: 0.9, confidence: 0.8), "bad": LivePosePoint(x: .nan, y: 0.5, confidence: 0.5)
+        ]))
+        try expect(pose.joints.count == 1 && pose.observation.joints["nose"]?.confidence == 0.8 && pose.observation.width == 640, "Pose keeps finite joints only")
+        let messages: [PartyMessage] = [
+            .hello(PartyHello(peerID: "a", name: "A", appVersion: "0.5.0")),
+            .welcome(PartyWelcome(peerID: "b", name: "B", appVersion: "0.5.0")),
+            .rejected(PartyRejection(reason: "full")),
+            .ping(PartyPing(id: 7, sentAt: 12.5)),
+            .pong(PartyPong(id: 7, sentAt: 12.5, receivedAt: 20, repliedAt: 20.001)),
+            .sharing(PartySharing(mode: .video, width: 640, height: 360)),
+            .pose(pose),
+            .beat(PartyBeatState(bpm: 96, playing: true, sourceName: "Club beat", isTrack: false, barAnchor: 100)),
+            .beat(PartyBeatState(bpm: nil, playing: false, sourceName: "Song", isTrack: true, barAnchor: nil)),
+            .countdown(PartyCountdown(startsAt: 130, bpm: 96, sourceName: "Club beat")),
+            .stop,
+            .bye(PartyFarewell(reason: nil))
+        ]
+        for message in messages {
+            let data = try message.encoded()
+            let object = try require(try JSONSerialization.jsonObject(with: data) as? [String: Any], "Message is a JSON object")
+            try expect(object["type"] as? String == message.typeName, "Type tag for \(message.typeName)")
+            try expect(try PartyMessage(jsonData: data) == message, "Round trip for \(message.typeName)")
+        }
+        try expectError(PartyMessageError.unknownType("dance-battle")) {
+            _ = try PartyMessage(jsonData: Data("{\"type\":\"dance-battle\",\"body\":{}}".utf8))
+        }
+
+        let packet = PartyVideoPacket(timestamp: 1.25, width: 960, height: 540, isKeyframe: true,
+                                      parameterSets: [Data([0x67, 0x42, 0x00]), Data([0x68, 0xCE])], data: Data(repeating: 0xAB, count: 1_000))
+        let encoded = packet.encoded()
+        try expect(try PartyVideoPacket(decoding: encoded) == packet && packet.frame().kind == .video, "Video packet round trip")
+        let delta = PartyVideoPacket(timestamp: 1.3, width: 960, height: 540, isKeyframe: false, parameterSets: [], data: Data([1, 2, 3]))
+        try expect(try PartyVideoPacket(decoding: delta.encoded()) == delta, "Delta packet round trip")
+        for cut in [0, 1, 5, 13, 20, encoded.count - 1] {
+            try expect((try? PartyVideoPacket(decoding: encoded.prefix(cut))) == nil, "Truncated packet at \(cut) rejected")
+        }
+        try expectError(PartyVideoPacketError.truncated) { _ = try PartyVideoPacket(decoding: encoded + Data([0])) }
+        var wrongVersion = encoded; wrongVersion[wrongVersion.startIndex] = 9
+        try expectError(PartyVideoPacketError.unsupportedVersion(9)) { _ = try PartyVideoPacket(decoding: wrongVersion) }
+        let zero = PartyVideoPacket(timestamp: 0, width: 0, height: 0, isKeyframe: false, parameterSets: [], data: Data([1]))
+        try expectError(PartyVideoPacketError.invalidDimensions) { _ = try PartyVideoPacket(decoding: zero.encoded()) }
+
+        var sync = PartyClockSync(capacity: 4)
+        try expect(sync.offset == nil, "No offset before samples")
+        sync.record(sentAt: 0, remoteReceivedAt: 100.010, remoteRepliedAt: 100.012, receivedAt: 0.022)
+        try expect(abs((sync.offset ?? 0) - 100) < 1e-9 && abs((sync.roundTrip ?? 0) - 0.020) < 1e-9, "Symmetric sample gives the exact offset")
+        sync.record(sentAt: 1, remoteReceivedAt: 101.300, remoteRepliedAt: 101.301, receivedAt: 1.320)
+        try expect(abs((sync.offset ?? 0) - 100) < 1e-9, "Jittery sample loses to the quieter one")
+        try expect(abs((sync.localTime(forRemote: 150) ?? 0) - 50) < 1e-9 && abs((sync.remoteTime(forLocal: 50) ?? 0) - 150) < 1e-9, "Clock conversions")
+        try expect(sync.record(sentAt: 5, remoteReceivedAt: 105, remoteRepliedAt: 105, receivedAt: 4) == nil, "Receive before send rejected")
+        try expect(sync.record(sentAt: 5, remoteReceivedAt: .nan, remoteRepliedAt: 105, receivedAt: 6) == nil, "Non-finite sample rejected")
+        for i in 0..<10 { sync.record(sentAt: Double(i), remoteReceivedAt: Double(i) + 100.05, remoteRepliedAt: Double(i) + 100.05, receivedAt: Double(i) + 0.1) }
+        try expect(sync.samples.count == 4 && abs((sync.offset ?? 0) - 100) < 1e-9, "Bounded sample window keeps the best offset")
+
+        try expect(PartyBeatGrid.barLength(bpm: 120) == 4, "Eight counts at 120 BPM last 4 s")
+        try expect(PartyBeatGrid.nextBarStart(after: 11, anchor: 10, bpm: 120) == 14, "Next bar after 11 s")
+        try expect(PartyBeatGrid.nextBarStart(after: 14, anchor: 10, bpm: 120) == 14, "Bar boundary itself counts")
+        try expect(PartyBeatGrid.nextBarStart(after: 13.9, anchor: 10, bpm: 120, minimumLead: 0.15) == 18, "Minimum lead skips a too-close bar")
+        try expect(PartyBeatGrid.nextBarStart(after: 3, anchor: 10, bpm: 120) == 6, "Grid extends before the anchor")
+        try expect(PartyBeatGrid.nextBarStart(after: 1, anchor: 0, bpm: 0) == nil && PartyBeatGrid.nextBarStart(after: 1, anchor: 0, bpm: 120, minimumLead: -1) == nil, "Invalid grid input")
+        try expect(PartyBeatGrid.beatIndex(at: 10.6, anchor: 10, bpm: 120) == 1 && PartyBeatGrid.beatIndex(at: 14.1, anchor: 10, bpm: 120) == 0 && PartyBeatGrid.beatIndex(at: 9, anchor: 10, bpm: 120) == nil, "Beat index within the bar")
+
+        try expect(PartyAddress.parse(" 192.168.1.8:52000 ") == PartyAddress(host: "192.168.1.8", port: 52000), "IPv4 address")
+        try expect(PartyAddress.parse("[fe80::1%en0]:7000") == PartyAddress(host: "fe80::1%en0", port: 7000), "Bracketed IPv6 address")
+        try expect(PartyAddress.parse("bens-mac.local:1") == PartyAddress(host: "bens-mac.local", port: 1), "Host name")
+        try expect(PartyAddress(host: "fe80::1", port: 5).description == "[fe80::1]:5" && PartyAddress(host: "10.0.0.2", port: 5).description == "10.0.0.2:5", "Address formatting")
+        for bad in ["", "192.168.1.8", "192.168.1.8:", ":5000", "192.168.1.8:0", "192.168.1.8:65536", "a b:5", "fe80::1:5000", "[fe80::1]5000", "[]:5000", "host:12ab"] {
+            try expect(PartyAddress.parse(bad) == nil, "Rejected address \(bad)")
+        }
+        let code = PartyRoomCode.generate()
+        try expect(code.count == 4 && PartyRoomCode.normalize(code) == code, "Generated code is four digits")
+        try expect(PartyRoomCode.normalize(" 12-34 ") == "1234", "Separators tolerated in a code")
+        for bad in ["123", "12345", "12a4", "１２３４"] { try expect(PartyRoomCode.normalize(bad) == nil, "Rejected code \(bad)") }
+        try expect(PartyShareMode.off.sendsPose == false && PartyShareMode.skeleton.sendsPose && !PartyShareMode.skeleton.sendsVideo && PartyShareMode.video.sendsVideo, "Share modes")
     }
 
     /// One sample at each beat, long enough for the slowest accepted period.

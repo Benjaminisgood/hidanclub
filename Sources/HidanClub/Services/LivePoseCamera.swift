@@ -58,6 +58,8 @@ final class LivePoseCamera: ObservableObject {
     /// locally readable and retained in PendingRecordings until it is imported.
     var onRecordingSaved: ((URL) -> Void)?
     let frames = LivePoseCameraFrames()
+    /// Same-frame pixel buffer and joints for a peer sender; see LivePoseFrameTap.
+    let frameTap = LivePoseFrameTap()
     var snapshot: LivePoseCameraSnapshot? { frames.snapshot }
     var statistics: LivePoseCameraStatistics { frames.statistics }
     @Published var mirrored = true
@@ -98,7 +100,7 @@ final class LivePoseCamera: ObservableObject {
                      deviceProvider: @escaping () -> AVCaptureDevice?) {
         self.authorizationStatus = authorizationStatus
         self.requestAccess = requestAccess
-        engine = LivePoseCaptureEngine(deviceProvider: deviceProvider)
+        engine = LivePoseCaptureEngine(deviceProvider: deviceProvider, frameTap: frameTap)
     }
 
     /// Call only in response to the user's explicit camera-enable action.
@@ -202,6 +204,7 @@ private final class LivePoseCaptureEngine: @unchecked Sendable {
     private let captureQueue = DispatchQueue(label: "club.hidan.camera.frames", qos: .userInitiated)
     private let lock = NSLock()
     private let deviceProvider: () -> AVCaptureDevice?
+    private let frameTap: LivePoseFrameTap?
     private var activeToken: UUID?
     private var acceptingFrames = false
     private var output: AVCaptureVideoDataOutput?
@@ -212,7 +215,10 @@ private final class LivePoseCaptureEngine: @unchecked Sendable {
     private var pipeline: LivePoseCapturePipeline?
     private var observers: [NSObjectProtocol] = []
 
-    init(deviceProvider: @escaping () -> AVCaptureDevice?) { self.deviceProvider = deviceProvider }
+    init(deviceProvider: @escaping () -> AVCaptureDevice?, frameTap: LivePoseFrameTap? = nil) {
+        self.deviceProvider = deviceProvider
+        self.frameTap = frameTap
+    }
 
     func start(token: UUID, onState: @escaping @MainActor (Event) -> Void,
                onFrame: @escaping @MainActor (LivePoseCameraSnapshot, LivePoseCameraStatistics) -> Void,
@@ -284,7 +290,7 @@ private final class LivePoseCaptureEngine: @unchecked Sendable {
                 }
                 let pipeline = LivePoseCapturePipeline(
                     format: format, isActive: { [weak self] in self?.canDeliverFrames(token) == true },
-                    onFrame: onFrame, onStatistics: onStatistics
+                    onFrame: onFrame, onStatistics: onStatistics, frameTap: self.frameTap
                 )
                 output.setSampleBufferDelegate(pipeline, queue: self.captureQueue)
                 self.output = output; self.pipeline = pipeline
@@ -399,6 +405,7 @@ private final class LivePoseCapturePipeline: NSObject, AVCaptureVideoDataOutputS
     private let isActive: () -> Bool
     private let onFrame: @MainActor (LivePoseCameraSnapshot, LivePoseCameraStatistics) -> Void
     private let onStatistics: @MainActor (LivePoseCameraStatistics) -> Void
+    private let frameTap: LivePoseFrameTap?
     private var statistics = LivePoseCameraStatistics()
     private var firstTimestamp: Double?
     private static let jointNames: [(String, VNHumanBodyPoseObservation.JointName)] = [
@@ -413,8 +420,10 @@ private final class LivePoseCapturePipeline: NSObject, AVCaptureVideoDataOutputS
     ]
     init(format: String, isActive: @escaping () -> Bool,
          onFrame: @escaping @MainActor (LivePoseCameraSnapshot, LivePoseCameraStatistics) -> Void,
-         onStatistics: @escaping @MainActor (LivePoseCameraStatistics) -> Void) {
+         onStatistics: @escaping @MainActor (LivePoseCameraStatistics) -> Void,
+         frameTap: LivePoseFrameTap? = nil) {
         self.isActive = isActive; self.onFrame = onFrame; self.onStatistics = onStatistics
+        self.frameTap = frameTap
         statistics.formatDescription = format
     }
 
@@ -439,7 +448,8 @@ private final class LivePoseCapturePipeline: NSObject, AVCaptureVideoDataOutputS
             var bodyCount = 0
             var failure: String?
             var width = 0, height = 0
-            if let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer)
+            if let buffer = pixelBuffer {
                 width = CVPixelBufferGetWidth(buffer); height = CVPixelBufferGetHeight(buffer)
                 statistics.formatDescription = "\(width) × \(height) · 相机协商格式"
                 let input = CIImage(cvPixelBuffer: buffer)
@@ -467,6 +477,9 @@ private final class LivePoseCapturePipeline: NSObject, AVCaptureVideoDataOutputS
             let snapshot = LivePoseCameraSnapshot(image: image, observation: observation)
             let counters = statistics
             guard isActive() else { return }
+            // The peer sender sees the same frame and joints as the preview; it
+            // runs inline here, so it is bounded by the same delegate queue.
+            if let pixelBuffer, let frameTap { frameTap.deliver(pixelBuffer, observation) }
             // Bounded, synchronous handoff: at most the current image/pose packet
             // waits for UI. Never queue one Task or async image operation per frame.
             DispatchQueue.main.sync {

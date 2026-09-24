@@ -39,6 +39,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIconFile</key><string>AppIcon.icns</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSCameraUsageDescription</key><string>在练习中显示你的画面并在本机识别身体关节。仅在你点击开始录像后录制，视频保存到本机视频库，不上传。</string>
+<key>NSLocalNetworkUsageDescription</key><string>「一起跳」在同一网络里寻找好友的房间，并把画面直接发给对方，不经过服务器。</string>
+<key>NSBonjourServices</key><array><string>_hidanclub._tcp</string></array>
 <key>NSPrincipalClass</key><string>NSApplication</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

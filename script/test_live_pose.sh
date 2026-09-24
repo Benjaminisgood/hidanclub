@@ -14,6 +14,7 @@ swiftc -swift-version 5 -target "$HIDAN_MAC_ARCH-apple-macosx14.0" \
 cat Sources/HidanClub/Services/LivePoseCamera.swift script/qa_live_pose_probe.swift > "$HIDAN_CAMERA_QA_DIR/CameraProbe.swift"
 swiftc -parse-as-library -swift-version 5 -target "$HIDAN_MAC_ARCH-apple-macosx14.0" \
   -I "$HIDAN_CAMERA_QA_DIR" -L "$HIDAN_CAMERA_QA_DIR" -lHidanCore \
-  "$HIDAN_CAMERA_QA_DIR/CameraProbe.swift" Sources/HidanClub/Services/CameraMovieRecorder.swift Sources/HidanClub/Views/LivePoseCameraView.swift \
+  "$HIDAN_CAMERA_QA_DIR/CameraProbe.swift" Sources/HidanClub/Services/CameraMovieRecorder.swift \
+  Sources/HidanClub/Services/LivePoseFrameTap.swift Sources/HidanClub/Views/LivePoseCameraView.swift \
   -o "$HIDAN_CAMERA_QA_DIR/live-pose-probe"
 DYLD_LIBRARY_PATH="$HIDAN_CAMERA_QA_DIR" "$HIDAN_CAMERA_QA_DIR/live-pose-probe"

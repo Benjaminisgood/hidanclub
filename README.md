@@ -25,6 +25,8 @@
 ./script/qa_music_library.sh
 ./script/qa_library_import.sh        # 需要一份真实导出的动作模型 JSON
 ./script/qa_library_import_ui.sh     # 同上，另存离屏渲染 PNG 到 output/qa-library-import
+./script/qa_party.sh                 # 「一起跳」回环连线：TLS-PSK 握手、H.264 往返、节拍同步
+./script/qa_party_ui.sh              # 「一起跳」页面离屏渲染 PNG 到 output/qa-party
 ```
 
 Codex 的 Run 按钮已连接到同一脚本。构建结果：`dist/HidanClub.app`。测试脚本在缺少 XCTest 的 Command Line Tools 环境运行可复现行为探针；具备 XCTest 时也会运行 `swift test`，其他测试失败不会被忽略。
@@ -35,6 +37,7 @@ Codex 的 Run 按钮已连接到同一脚本。构建结果：`dist/HidanClub.ap
 - 动作库支持从 JSON 文件导入：接受完整的二维动作模型导出（`*.hidanclub.json`）或裸识别报告。导入只读取原文件，保存独立副本，保留全部原始帧、置信度与原始 PTS；动作库使用文件自带的片段范围。编排库只排动作库里的三维片段。
 - 训练台内嵌真实 AIST++ 示范：四种训练风格各 3 个真实命名动作，10–45 分钟计划每个练习段有对应模型，开始／暂停／换段联动。热身和休息显示下一动作预告。
 - 实时摄像头跟练：本机 Vision 二维关节捕捉、入镜指导、可见关节与肘膝投影角度；并排、仅示范、仅摄像头、透明叠加四种显示方式。
+- 「一起跳」P2P 好友连线：一台 Mac 开房间（Bonjour 广播 + 点对点 Wi‑Fi），另一台从附近列表或手输 `IP:端口` 加入，输入 4 位房间码，房主确认后配对。链路用房间码派生的 TLS 1.2 预共享密钥加密，画面按 VideoToolbox H.264（640 或 960 宽）直接发给对方，与同一帧的关节一起显示；可选「不共享 / 只共享骨架 / 画面与骨架」，默认不共享。底部音乐条就是共享节拍：房主的播放、暂停与速度镜像给客人，「一起开始」用 NTP 式时钟对齐让两边同一瞬间倒数起拍，客人在下一个八拍进入；导入的音乐不传给对方，对方听到同速的原创节拍。一次只连一位好友，不经过服务器，不保存、不录音。
 - 左侧「音乐库」放两类东西：多套原创八拍（各自记住一个速度），以及导入后永久保存的本地音乐。两种播放器样式不同。音乐在本机估计一个整体 BPM，可手改；动作按 ¼×、½×、1×、2× 跟随，不改音乐本身。估计没有第一拍，短于约 8 秒或没有稳定周期时需要手填 BPM。视频动作仍按原片时间播放。
 - 视频库：多选导入并原字节保存视频，训练台可手动录像并自动入库，重启后继续回放。录像为当前相机尺寸的画面，不录音、不叠加示范或骨架。
 - 本机 Vision 肢体识别后，可依据全帧动作变化生成分段建议；显式应用后调整 A–B、顺序和重复次数，再导入动作库。没有重新生成舞步或过渡动画。
@@ -44,7 +47,7 @@ Codex 的 Run 按钮已连接到同一脚本。构建结果：`dist/HidanClub.ap
 - AIST++ 完整 3D 动作库、100 个官方基础动作名、全帧循环与片段训练。
 - 柔光人形、霓虹人形与经典骨架，支持样式切换和骨架叠加；原关节数据与时间轴不变。
 
-未包含授权教学视频；文字卡待教师审核。未实现自动舞步分类、舞蹈评分、自由生成三维编舞或 MusicKit。
+未包含授权教学视频；文字卡待教师审核。未实现自动舞步分类、舞蹈评分、自由生成三维编舞或 MusicKit。「一起跳」只做同一网络（或 VPN 内网）的直连，没有 NAT 穿透、中继服务器、多人房间、语音通话或 3D 示范同步。
 
 ## AIST++ 动作数据接入
 
@@ -81,5 +84,7 @@ python3 script/aist_dataset.py --verify-only
 数据位于 `~/Library/Application Support/HidanClub/`：`Videos/` 保存原视频和视频条目，`CapturedMotions/` 保存完整二维识别模型，`VideoMotionLibrary/` 保存导入动作库/编排库的独立副本（含从 JSON 文件导入的副本），`Music/` 保存导入音乐的原字节、估计节拍和手动 BPM，`PendingRecordings/` 保留录像原件。相应隔离变量为 `HIDAN_VIDEO_DIR`、`HIDAN_CAPTURE_DIR`、`HIDAN_PUBLISHED_DIR`、`HIDAN_MUSIC_DIR`。所有分析在本机进行，完整原始帧和时间戳保留；损坏记录不静默覆盖。
 
 历史位于 `history.json`，可用 `HIDAN_DATA_DIR` 隔离。正常退出会等待录像完成和入库，再保存当前练习；强制结束或崩溃不保证录像完成，运行中的练习也不跨启动恢复。
+
+「一起跳」不写任何媒体文件：对方的画面只在内存里解码显示。`UserDefaults` 记住本机的显示名、随机生成的对端 ID 和画质选择。首次搜索或开房间时 macOS 会请求本地网络权限（`NSLocalNetworkUsageDescription`、`NSBonjourServices` 已写入 `Info.plist`）。
 
 SwiftUI 应用与 Foundation-only `HidanCore` 分离。当前只验证 macOS，iOS / iPadOS 是后续目标。
