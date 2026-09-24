@@ -50,19 +50,19 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 7) {
-                        BrandIcon(size: 43)
-                        Text("hidan").font(.system(size: 31, weight: .black, design: .rounded)).tracking(-1.5)
+                        BrandIcon(size: 34)
+                        Text("hidan").font(.system(size: 27, weight: .bold, design: .rounded)).tracking(-1.5)
                     }
                     Text("DANCE. LEARN. REPEAT.").font(.system(size: 8, weight: .medium, design: .monospaced)).tracking(1.6).foregroundStyle(.secondary)
-                }.padding(.horizontal, 24).padding(.top, 36).padding(.bottom, 18)
+                }.padding(.horizontal, 20).padding(.top, 22).padding(.bottom, 14)
                 List(ClubPage.allCases, selection: sidebarSelection) { page in
-                    Label(page.rawValue, systemImage: page.icon).padding(.vertical, 5).tag(page)
+                    Label(page.rawValue, systemImage: page.icon).padding(.vertical, 3).tag(page)
                 }.listStyle(.sidebar)
                 VStack(alignment: .leading, spacing: 10) {
                     Divider()
                     Label("属于你的练习空间", systemImage: "sparkle").font(.caption).foregroundStyle(.secondary)
                     Text("一步一步，找到自己的风格。").font(.caption2).foregroundStyle(.tertiary)
-                }.padding(20)
+                }.padding(16)
             }.navigationSplitViewColumnWidth(min: 195, ideal: 210, max: 250)
         } detail: {
             VStack(spacing: 0) {
@@ -121,8 +121,11 @@ struct ContentView: View {
                     if practicing { leavePractice() }
                     selection = .music
                 })
-            }.background(ClubTheme.accent.opacity(0.025))
+            }
         }
+        .buttonStyle(.bordered)
+        .controlSize(.regular)
+        .tint(ClubTheme.accent)
         .toolbar(.hidden, for: .windowToolbar)
         .onChange(of: practiceFullscreen) { _, on in
             if on {

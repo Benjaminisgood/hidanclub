@@ -34,7 +34,7 @@ struct PracticeSettingsView: View {
                 practice
                 data
             }
-            .padding(28)
+            .padding(ClubTheme.pageInset)
             .frame(maxWidth: 760, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
         }

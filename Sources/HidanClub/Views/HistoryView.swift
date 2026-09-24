@@ -9,9 +9,8 @@ struct HistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Eyebrow(text: "PRACTICE JOURNAL / 练习录")
                 HStack {
-                    Text("看见一点一滴的积累。").font(.system(size: 30, weight: .bold))
+                    ClubPageTitle(title: "练习录", eyebrow: "PRACTICE JOURNAL", subtitle: "看见一点一滴的积累。")
                     Spacer()
                     Button("导出记录", systemImage: "square.and.arrow.up") { export() }.disabled(store.history.isEmpty)
                 }
@@ -41,7 +40,7 @@ struct HistoryView: View {
                     }
                 }
                 if let error { Text(error).foregroundStyle(.red) }
-            }.padding(32)
+            }.padding(ClubTheme.pageInset)
         }
     }
     private func stat(_ title: String, _ value: String, _ detail: String) -> some View {

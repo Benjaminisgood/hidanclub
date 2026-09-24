@@ -32,7 +32,7 @@ struct CapturedMotionView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     TextField("给这段舞蹈命名", text: Binding(get: { modelName }, set: { modelName = $0; store.rename($0) }))
                         .textFieldStyle(.roundedBorder)
-                    HStack(spacing: 10) {
+                    ControlFlow(spacing: 10) {
                         if showsSaveAction {
                             Button(store.isSaving ? "保存中…" : "保存完整模型") { store.rename(modelName); Task { await store.saveSelected() } }.disabled(store.isSaving)
                         }
@@ -48,7 +48,6 @@ struct CapturedMotionView: View {
                                 }
                             }.buttonStyle(.borderedProminent).disabled(!model.hasPlayableMotion || !canPractice || store.isSaving)
                         }
-                        Spacer(minLength: 0)
                     }
                 }
                 if !canPractice { Text("先结束当前练习，再切换这段视频。").font(.caption).foregroundStyle(.secondary) }
@@ -61,14 +60,16 @@ struct CapturedMotionView: View {
                 Text(model.qualityNotice).font(.callout).foregroundStyle(model.usableCoverage < 0.5 ? Color.orange : Color.secondary)
                 CapturedMotionPlayerView(playback: store.playback).frame(minHeight: 280, maxHeight: 440)
                 CapturedMotionPreviewControls(playback: store.playback)
-                HStack {
+                ControlFlow {
                     Button("设 A：第 \(store.selectionA + 1) 帧") { store.setA() }
                     Button("设 B：第 \(store.selectionB + 1) 帧") { store.setB() }
-                    Spacer(minLength: 0)
                     Text("第 \(store.selectionA + 1)–\(store.selectionB + 1) 帧").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                 }
                 Text("A 是起点，B 是终点。把播放头移到要截的位置再设点，然后收入动作库。识别结果仍留在这条视频上。").font(.caption).foregroundStyle(.secondary)
-                Text("可用骨架：该帧为单人，且至少 6 个身体关节置信度 ≥ 0.2。这是捕捉完整性提示，不是动作评分。模型保留完整二维坐标、置信度与原始 PTS；最后一帧使用剩余视频时长，否则延用相邻帧间隔。").font(.caption2).foregroundStyle(.secondary)
+                DisclosureGroup("捕捉质量与帧信息") {
+                    Text("可用骨架：该帧为单人，且至少 6 个身体关节置信度 ≥ 0.2。这是捕捉完整性提示，不是动作评分。模型保留完整二维坐标、置信度与原始 PTS；最后一帧使用剩余视频时长，否则延用相邻帧间隔。")
+                        .font(.caption).foregroundStyle(.secondary).padding(.top, 6)
+                }.font(.caption)
             } else {
                 ContentUnavailableView("这段视频还没有动作", systemImage: "figure.dance", description: Text("开始肢体识别后，骨架会显示在这条视频上。"))
             }
@@ -101,7 +102,7 @@ struct CapturedMotionPlayerView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                if !transparentBackground { RoundedRectangle(cornerRadius: 18).fill(Color(red: 0.055, green: 0.065, blue: 0.09)) }
+                if !transparentBackground { ClubTheme.stage }
                 if playback.model == nil {
                     Text("识别完成后，这里显示这段视频的肢体。").font(.callout).foregroundStyle(transparentBackground ? Color.primary : Color.white.opacity(0.8))
                 } else {
@@ -128,11 +129,21 @@ struct CapturedMotionPlayerView: View {
                 VStack {
                     HStack { Text("2D 动作模型").font(.caption.weight(.medium)); Spacer(); Text("\(playback.frameIndex + 1) / \(playback.frameCount)").font(.caption.monospacedDigit()) }
                     Spacer()
-                    if let frame = playback.currentFrame { HStack { Text("PTS \(frame.timestampValue)/\(frame.timestampTimescale)").font(.caption2.monospaced()); Spacer() } }
+                    if let frame = playback.currentFrame {
+                        HStack {
+                            Text("原片 " + playbackTime(frame.timestamp)).font(.caption.monospacedDigit())
+                            Spacer()
+                            if playback.mirrored { Text("镜像").font(.caption) }
+                        }
+                    }
                 }.foregroundStyle(transparentBackground ? Color.primary : Color.white.opacity(0.72)).padding(16)
                 }
             }.frame(width: geometry.size.width, height: geometry.size.height)
-        }.accessibilityLabel("二维动作模型，保留视频原始时间戳；不包含真实深度。")
+        }
+        .clipShape(RoundedRectangle(cornerRadius: transparentBackground ? 0 : ClubTheme.cornerRadius))
+        .accessibilityElement(children: .ignore)
+            .accessibilityLabel("二维动作模型")
+            .accessibilityValue("第 \(playback.frameCount == 0 ? 0 : playback.frameIndex + 1) 帧，共 \(playback.frameCount) 帧")
     }
 }
 
@@ -141,27 +152,40 @@ struct CapturedMotionPreviewControls: View {
     var practice: (() -> Void)? = nil
     var canPractice = true
     var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Button(action: playback.toggle) { Label(playback.isPlaying ? "暂停" : "播放动作", systemImage: playback.isPlaying ? "pause.fill" : "play.fill") }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!playback.hasPlayableMotion)
+        PlayerControlCard {
+            VStack(alignment: .leading, spacing: 12) {
+                PlaybackTimeline(value: Binding(get: { Double(playback.frameIndex) }, set: { playback.seek(Int($0)) }),
+                                 upperBound: Double(max(0, playback.frameCount - 1)),
+                                 elapsed: playbackTime(playback.currentFrame?.timestamp ?? 0),
+                                 total: playbackTime(playback.model?.report.duration ?? 0),
+                                 label: "二维动作帧", detail: "帧 \(playback.frameCount == 0 ? 0 : playback.frameIndex + 1) / \(playback.frameCount)")
+                    .help("时间轴浏览全部原始帧；播放遵循保存的片段范围。")
+                ControlFlow {
+                    CircularPlayButton(playing: playback.isPlaying, help: "播放或暂停动作", action: playback.toggle)
+                        .disabled(!playback.hasPlayableMotion)
+                    PlayerIconButton(title: "上一帧", symbol: "backward.frame") { playback.step(-1) }
+                        .disabled(playback.frameCount < 2)
+                    PlayerIconButton(title: "下一帧", symbol: "forward.frame") { playback.step(1) }
+                        .disabled(playback.frameCount < 2)
+                    PlayerToggle(title: "镜像", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right", isOn: $playback.mirrored)
+                    PlayerToggle(title: "循环", symbol: "repeat", isOn: $playback.loop)
+                    Picker("速度", selection: $playback.speed) {
+                        Text("0.25×").tag(0.25); Text("0.5×").tag(0.5)
+                        Text("0.75×").tag(0.75); Text("1×").tag(1.0)
+                    }.frame(width: 126)
+                }
+                if let segment = playback.currentSegment {
+                    Text("播放片段 \(segment.startFrame + 1)–\(segment.endFrame + 1) 帧 · 第 \(playback.repetitionIndex + 1)/\(segment.repeats) 次 · \(playbackTime(playback.elapsed)) / \(playbackTime(playback.planDuration))")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let practice {
-                    Button("开始练习", action: practice).buttonStyle(.borderedProminent)
+                    Divider()
+                    Button("开始练习", systemImage: "figure.dance", action: practice)
+                        .buttonStyle(.borderedProminent)
                         .disabled(!canPractice || !playback.hasPlayableMotion)
                 }
-                Button("上一帧") { playback.step(-1) }; Button("下一帧") { playback.step(1) }
-                Spacer(minLength: 0)
             }
-            HStack {
-                Toggle("循环", isOn: $playback.loop).toggleStyle(.checkbox)
-                Toggle("镜像", isOn: $playback.mirrored).toggleStyle(.checkbox)
-                Spacer(minLength: 0)
-                Picker("速度", selection: $playback.speed) { Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0) }.frame(width: 120)
-            }
-            Slider(value: Binding(get: { Double(playback.frameIndex) }, set: { playback.seek(Int($0)) }), in: 0...Double(max(1, playback.frameCount - 1)), step: 1).disabled(playback.frameCount < 2)
-            Text(String(format: "%.2f / %.2f 秒", playback.elapsed, playback.planDuration))
-                .font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }

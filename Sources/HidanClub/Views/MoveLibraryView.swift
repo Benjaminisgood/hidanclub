@@ -63,7 +63,7 @@ struct MoveLibraryView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Eyebrow(text: "FUNDAMENTALS")
                     Text("基本功").font(.system(size: 28, weight: .bold))
-                    Text("每张卡片都有两套练习坐标。列表自动播放逐帧采样；点开和练习默认使用时序平滑。")
+                    Text("从一个动作开始，放慢看清细节，再跟着节拍练习。")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 HStack {
@@ -87,9 +87,11 @@ struct MoveLibraryView: View {
                 PracticeMotionGallery(directory: motions.directory, ready: motions.ready, moves: filtered, open: open)
                 if filtered.isEmpty { ContentUnavailableView.search(text: filters.query) }
                 if let notice { Text(notice).font(.caption).foregroundStyle(.secondary) }
-                Text("这些坐标由应用按站立练习生成，格式与动作库相同：60 FPS、17 个关节、原始采样和时序平滑成对保存。不是 AIST++ 测量，也不是经过教练验证的课程。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }.padding(32)
+                DisclosureGroup("关于这些练习坐标") {
+                    Text("这些坐标由应用按站立练习生成，格式与动作库相同：60 FPS、17 个关节、原始采样和时序平滑成对保存。不是 AIST++ 测量，也不是经过教练验证的课程。")
+                        .font(.caption).foregroundStyle(.secondary).padding(.top, 6)
+                }.font(.caption)
+            }.padding(ClubTheme.pageInset)
         }
     }
 
@@ -100,8 +102,7 @@ struct MoveLibraryView: View {
                     Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
                 HStack(spacing: 8) {
-                    Button { motions.pause(); showingDetail = false } label: { Image(systemName: "chevron.left") }
-                        .buttonStyle(.plain).foregroundStyle(.secondary).help("全部基本功")
+                    PlayerIconButton(title: "全部基本功", symbol: "chevron.left") { motions.pause(); showingDetail = false }
                     Text(motions.title).font(.title3.weight(.semibold)).lineLimit(1)
                     if motions.moves.count > 1 {
                         Text(motions.moves.map(\.name).joined(separator: " → "))
@@ -111,7 +112,7 @@ struct MoveLibraryView: View {
                             .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     }
                     Spacer(minLength: 8)
-                }.controlSize(.small)
+                }
                 MotionPlaybackReader(playback: motions.playback) {
                     VStack(alignment: .leading, spacing: 12) {
                         MotionStageChrome(
@@ -146,33 +147,29 @@ struct MoveLibraryView: View {
     private var practiceTransport: some View {
         let frame = motions.playback.frameIndex
         let count = motions.frameCount
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(String(format: "%.2f / %.2f 秒", Double(frame) / 60, Double(count) / 60)).monospacedDigit()
-                Spacer(minLength: 8)
-                Text("帧 \(frame + 1) / \(count)").monospacedDigit()
-            }.font(.caption2).foregroundStyle(.secondary)
-            Slider(value: Binding(get: { Double(frame) }, set: { motions.pause(); motions.seek(Int($0)) }),
-                   in: 0...Double(max(1, count - 1)), step: 1).controlSize(.small).accessibilityLabel("动作帧")
-            HStack(spacing: 6) {
-                Button { motions.toggle() } label: {
-                    Label(motions.playback.isPlaying ? "暂停预览" : "动作预览", systemImage: motions.playback.isPlaying ? "pause.fill" : "play.fill")
-                }.disabled(motions.motion == nil).accessibilityIdentifier("practice.stage.play")
-                Button("镜像") { motions.mirrored.toggle() }
-                Button("重置视角", systemImage: "arrow.counterclockwise") { motions.resetCamera += 1 }
-                Button { motions.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
-                Button { motions.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
+        return PlayerControlCard {
+        VStack(alignment: .leading, spacing: 14) {
+            PlaybackTimeline(value: Binding(get: { Double(frame) }, set: { motions.pause(); motions.seek(Int($0)) }),
+                             upperBound: Double(max(0, count - 1)),
+                             elapsed: playbackTime(Double(frame) / 60), total: playbackTime(Double(count) / 60),
+                             label: "动作帧", detail: "帧 \(frame + 1) / \(count)")
+            ControlFlow {
+                CircularPlayButton(playing: motions.playback.isPlaying, help: "播放或暂停动作预览") { motions.toggle() }
+                    .disabled(motions.motion == nil).accessibilityIdentifier("practice.stage.play")
+                PlayerIconButton(title: "上一帧", symbol: "backward.frame") { motions.step(-1) }
+                PlayerIconButton(title: "下一帧", symbol: "forward.frame") { motions.step(1) }
+                PlayerToggle(title: "镜像", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right", isOn: $motions.mirrored)
+                PlayerIconButton(title: "重置视角", symbol: "arrow.counterclockwise") { motions.resetCamera += 1 }
                 if music.tempoMode == .music, music.motionBeatBPM != nil {
                     Text(String(format: "跟随音乐 %.2f×", motions.speed)).foregroundStyle(.secondary)
                         .help("音乐模式下，动作速度由底部的节拍倍数决定。")
                 } else {
                     Picker("速度", selection: $motions.speed) {
                         ForEach(MotionTempo.speedChoices, id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                    }.frame(width: 78).help("动作节拍速度，和原创节拍是同一套。")
+                    }.frame(width: 126).help("动作节拍速度，和原创节拍是同一套。")
                 }
             }
-            .controlSize(.small)
-            .font(.caption)
+        }
         }
     }
 
@@ -289,8 +286,8 @@ private struct PracticeMotionGallery: View {
             HStack { Text(move.style.displayName); Spacer(); Text(move.bpmLabel) }
                 .font(.caption2).foregroundStyle(.secondary)
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(.primary.opacity(0.07)))
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+            .overlay(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius).strokeBorder(.primary.opacity(0.07)))
     }
 
     @ViewBuilder private func thumbnail(_ joints: [SIMD3<Double>]?) -> some View {

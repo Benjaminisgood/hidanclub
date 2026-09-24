@@ -29,7 +29,7 @@ struct VideoLibraryView: View {
                 emptyLibrary
             } else {
                 HStack(alignment: .top, spacing: 24) {
-                    videoList.frame(width: 220)
+                    videoList.frame(width: 190)
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
                             if let selected = library.selected {
@@ -43,7 +43,7 @@ struct VideoLibraryView: View {
                 }
             }
         }
-        .padding(28)
+        .padding(ClubTheme.pageInset)
         .fileImporter(isPresented: $importing, allowedContentTypes: [.movie, .video], allowsMultipleSelection: true) { result in
             switch result {
             case .success(let urls):
@@ -74,12 +74,8 @@ struct VideoLibraryView: View {
     }
 
     private var headerTitle: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Eyebrow(text: "VIDEO LIBRARY")
-            Text("视频库").font(.system(size: 30, weight: .bold))
-            Text("收藏视频，在本页识别肢体。截出的一段可以收入动作库。")
-                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-        }
+        ClubPageTitle(title: "视频库", eyebrow: "VIDEO LIBRARY",
+                      subtitle: "收藏视频、回看练习，把喜欢的动作截进动作库。")
     }
 
     private var headerActions: some View {
@@ -115,13 +111,15 @@ struct VideoLibraryView: View {
                 }.padding(.vertical, 5).tag(item.id)
             }
         }.listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
     }
 
     private func sourceCard(_ item: LibraryVideo) -> some View {
         ClubCard {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .firstTextBaseline) {
-                    Text(item.name).font(.title2.weight(.semibold)).textSelection(.enabled)
+                    Text(item.name).font(.title3.weight(.semibold)).lineLimit(2).textSelection(.enabled)
                     Spacer()
                     Text(item.source.title).font(.caption).foregroundStyle(.secondary)
                 }
@@ -190,7 +188,7 @@ struct VideoLibraryView: View {
                     }
                 }
             } else if captured.isLoading {
-                ProgressView("正在载入这段视频的动作模型").frame(maxWidth: .infinity).padding(28)
+                ProgressView("正在载入这段视频的动作模型").frame(maxWidth: .infinity).padding(ClubTheme.pageInset)
             } else if !library.isAnalyzing {
                 ContentUnavailableView("动作模型暂时无法打开", systemImage: "figure.dance", description: Text("原视频仍可回看。请重新识别，或检查动作模型的保存位置。"))
             }
@@ -246,25 +244,12 @@ private struct LibrarySourceVideoPreview: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        Group {
             if hasCurrentVideo {
-                NativeVideoPlayer(player: video.player)
-                    .scaleEffect(x: video.mirrored ? -1 : 1, y: 1)
-                    .frame(height: 270).clipShape(RoundedRectangle(cornerRadius: 16))
-                HStack {
-                    Button(action: video.toggle) { Label(video.isPlaying ? "暂停" : "播放视频", systemImage: video.isPlaying ? "pause.fill" : "play.fill") }
-                    Text("\(clockText(video.currentTime)) / \(clockText(video.duration))").font(.caption.monospacedDigit())
-                    Spacer()
-                    Toggle("镜像", isOn: $video.mirrored).toggleStyle(.checkbox)
-                    Picker("速度", selection: Binding(get: { video.rate }, set: video.setRate)) {
-                        Text("0.25×").tag(Float(0.25)); Text("0.5×").tag(Float(0.5)); Text("0.75×").tag(Float(0.75)); Text("1×").tag(Float(1))
-                    }.frame(width: 125)
-                }
-                Slider(value: Binding(get: { video.currentTime }, set: video.seek), in: 0...max(video.duration, 0.001))
-            } else if video.errorMessage == nil {
-                ProgressView("正在打开原视频").frame(maxWidth: .infinity).frame(height: 270)
+                VideoPlaybackPanel(video: video)
+            } else {
+                VideoPlaybackPlaceholder(message: video.errorMessage)
             }
-            if let error = video.errorMessage { Text(error).font(.callout).foregroundStyle(.red) }
         }
     }
 }

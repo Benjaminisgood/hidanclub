@@ -34,6 +34,7 @@ import SwiftUI
 
     func load(url: URL) {
         player.pause(); isPlaying = false; loopSeeking = false; playbackRequested = false
+        errorMessage = nil
         let token = UUID(); generation = token
         let asset = AVURLAsset(url: url)
         Task {

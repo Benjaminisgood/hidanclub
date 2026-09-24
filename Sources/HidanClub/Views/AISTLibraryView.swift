@@ -80,10 +80,11 @@ struct AISTLibraryView: View {
     private var gallery: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
+                    Eyebrow(text: "MOTION LIBRARY")
                     Text("动作库").font(.system(size: 28, weight: .bold))
-                    Text("列表用原始逐帧重建自动播放。点开或练习时默认用官方时序优化，可在设置页里更换。")
+                    Text("找到想练的动作，预览、收藏，或截取一段加入编排。")
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -143,7 +144,7 @@ struct AISTLibraryView: View {
                         .accessibilityIdentifier("aist.gallery")
                 }
             }
-        }.padding(.horizontal, 26).padding(.vertical, 20)
+        }.padding(ClubTheme.pageInset)
         }
     }
 
@@ -189,6 +190,11 @@ struct AISTLibraryView: View {
     }
 
     private func clipCard(_ model: CapturedMotion) -> some View {
+        Button {
+            store.pause()
+            showDetail = false
+            openedClipID = model.id
+        } label: {
         VStack(alignment: .leading, spacing: 0) {
             ClippedPoseThumbnail(model: model)
                 .frame(height: 188)
@@ -200,17 +206,14 @@ struct AISTLibraryView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.primary.opacity(0.07)))
-        .contentShape(RoundedRectangle(cornerRadius: 18))
-        .onTapGesture {
-            store.pause()
-            showDetail = false
-            openedClipID = model.id
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+        .overlay(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius).strokeBorder(.primary.opacity(0.07)))
+        .contentShape(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
         }
+        .buttonStyle(.plain)
         .accessibilityLabel(model.name)
-        .accessibilityAddTraits(.isButton)
+
     }
 
     private func clipDetail(_ model: CapturedMotion) -> some View {
@@ -246,8 +249,7 @@ struct AISTLibraryView: View {
     private func sequenceHeader(_ sequence: AISTSequence) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
-                Button { showDetail = false } label: { Image(systemName: "chevron.left") }
-                    .buttonStyle(.plain).foregroundStyle(.secondary).help("全部动作")
+                PlayerIconButton(title: "全部动作", symbol: "chevron.left") { showDetail = false }
                 Text(store.name(for: sequence)).font(.title3.weight(.semibold)).lineLimit(1).textSelection(.enabled)
                 Text("\(sequence.genreName) · \(sequence.category) · \(sequence.dancerID)")
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -255,9 +257,11 @@ struct AISTLibraryView: View {
                 Spacer(minLength: 8)
                 Button { store.toggleFavorite(sequence.id) } label: {
                     Image(systemName: store.favorites.contains(sequence.id) ? "star.fill" : "star")
-                }.help("收藏动作")
+                }
+                .accessibilityLabel(store.favorites.contains(sequence.id) ? "取消收藏" : "收藏动作")
+                .help("收藏动作")
                 Button("来源说明") { showDataInfo = true }
-            }.controlSize(.small)
+            }
             if sequence.ignored {
                 Label("官方标记此序列重建质量较低；所有帧仍保留。", systemImage: "exclamationmark.triangle")
                     .font(.caption2).foregroundStyle(.orange)
@@ -275,40 +279,38 @@ struct AISTLibraryView: View {
     }
 
     private func transport(_ sequence: AISTSequence) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(String(format: "%.2f / %.2f 秒", Double(store.frameIndex) / sequence.fps, sequence.duration)).monospacedDigit()
-                Spacer(minLength: 8)
-                Text("帧 \(store.frameIndex + 1) / \(sequence.frameCount)").monospacedDigit()
-            }.font(.caption2).foregroundStyle(.secondary)
-            Slider(value: Binding(get: { Double(store.frameIndex) }, set: { store.pause(); store.seek(Int($0)) }),
-                   in: 0...Double(max(1, sequence.frameCount - 1)), step: 1).controlSize(.small).accessibilityLabel("动作帧")
-            HStack(spacing: 6) {
-                Button { store.toggle() } label: {
-                    Label(store.isPlaying ? "暂停预览" : "动作预览", systemImage: store.isPlaying ? "pause.fill" : "play.fill")
-                }.disabled(store.motion == nil).accessibilityIdentifier("aist.stage.play")
-                Button("镜像") { store.mirrored.toggle() }
-                Button("重置视角", systemImage: "arrow.counterclockwise") { store.resetCamera += 1 }
-                Button { store.step(-1) } label: { Image(systemName: "backward.frame") }.help("上一帧")
-                Button { store.step(1) } label: { Image(systemName: "forward.frame") }.help("下一帧")
+        PlayerControlCard {
+        VStack(alignment: .leading, spacing: 14) {
+            PlaybackTimeline(value: Binding(get: { Double(store.frameIndex) }, set: { store.pause(); store.seek(Int($0)) }),
+                             upperBound: Double(max(0, sequence.frameCount - 1)),
+                             elapsed: playbackTime(Double(store.frameIndex) / sequence.fps), total: playbackTime(sequence.duration),
+                             label: "动作帧", detail: "帧 \(store.frameIndex + 1) / \(sequence.frameCount)")
+            ControlFlow {
+                CircularPlayButton(playing: store.isPlaying, help: "播放或暂停动作预览") { store.toggle() }
+                    .disabled(store.motion == nil).accessibilityIdentifier("aist.stage.play")
+                PlayerIconButton(title: "上一帧", symbol: "backward.frame") { store.step(-1) }
+                PlayerIconButton(title: "下一帧", symbol: "forward.frame") { store.step(1) }
+                PlayerToggle(title: "镜像", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right", isOn: $store.mirrored)
+                PlayerIconButton(title: "重置视角", symbol: "arrow.counterclockwise") { store.resetCamera += 1 }
                 if music.tempoMode == .music, music.motionBeatBPM != nil {
-                    Text(String(format: "跟随音乐 %.2f×", store.speed)).foregroundStyle(.secondary)
+                    Text(String(format: "跟随音乐 %.2f×", store.speed)).font(.caption).foregroundStyle(.secondary)
                         .help("音乐模式下，动作速度由底部的节拍倍数决定。")
                 } else {
                     Picker("速度", selection: $store.speed) {
                         ForEach(MotionTempo.speedChoices, id: \.self) { Text(String(format: "%g×", $0)).tag($0) }
-                    }.frame(width: 78).help("动作节拍速度，和原创节拍是同一套。")
+                    }.frame(width: 126)
                 }
             }
-            .controlSize(.small)
-            .font(.caption)
-            HStack(spacing: 6) {
-                Button("设 A") { store.setA() }
-                Button("设 B") { store.setB() }
-                Text("\(store.loopStart + 1)–\(store.loopEnd + 1)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+            Divider()
+            ControlFlow {
+                PlayerToggle(title: "A–B 循环", symbol: "repeat", isOn: $store.loopEnabled)
+                Button("设 A · \(store.loopStart + 1) 帧") { store.setA() }
+                Button("设 B · \(store.loopEnd + 1) 帧") { store.setB() }
                 Button("8 拍") { store.eightBeats() }.disabled(sequence.bpm == nil).help("从当前帧起，按音乐 BPM 取 8 拍长度")
                 Button("全段") { store.fullRange() }
-                Toggle("循环", isOn: $store.loopEnabled).toggleStyle(.checkbox)
+            }
+            Divider()
+            ControlFlow {
                 Button("节拍", systemImage: "metronome") {
                     guard let bpm = sequence.bpm else { return }
                     musicLibrary.detachLibrarySelection()
@@ -321,13 +323,12 @@ struct AISTLibraryView: View {
                     } catch { message = error.localizedDescription }
                 }.disabled(store.motion == nil || store.loading || !arrangements.canEditDraft)
                     .accessibilityIdentifier("aist.addToArrangement")
-                Button("导出", systemImage: "square.and.arrow.up") {
+                Button("导出片段", systemImage: "square.and.arrow.up") {
                     do { if let url = try store.exportSegment() { exportURL = url; message = "已导出全部连续坐标和来源说明。" } }
                     catch { message = "导出失败：\(error.localizedDescription)" }
                 }.disabled(store.motion == nil).help("导出 A–B 连续坐标")
             }
-            .controlSize(.small)
-            .font(.caption)
+        }
         }
     }
 
@@ -473,7 +474,7 @@ private struct AISTGalleryGrid: View {
                         .foregroundStyle(isFavorite(sequence) ? Color.orange : Color.white)
                         .padding(7)
                         .background(.black.opacity(0.38), in: Circle())
-                }.buttonStyle(.plain).padding(8).help("收藏动作")
+                }.buttonStyle(.plain).padding(8).accessibilityLabel(isFavorite(sequence) ? "取消收藏" : "收藏动作").help("收藏动作")
                 if sequence.ignored {
                     Image(systemName: "exclamationmark.triangle").font(.caption2).foregroundStyle(.orange)
                         .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -488,9 +489,9 @@ private struct AISTGalleryGrid: View {
                 }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
             }.buttonStyle(.plain)
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.primary.opacity(0.07)))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+        .clipShape(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+        .overlay(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius).strokeBorder(.primary.opacity(0.07)))
         .accessibilityElement(children: .contain)
         .onAppear { playback.pin(sequence) }
         .onDisappear { playback.unpin(sequence.id) }

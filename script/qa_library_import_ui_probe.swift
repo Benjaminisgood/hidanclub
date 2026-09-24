@@ -30,15 +30,31 @@ import HidanCore
         }
     }
 
-    @MainActor static func render<V: View>(_ view: V, width: CGFloat, height: CGFloat, to url: URL) throws {
-        let framed = view.frame(width: width, height: height).background(Color(nsColor: .windowBackgroundColor))
-        let renderer = ImageRenderer(content: framed)
-        renderer.scale = 2
-        renderer.proposedSize = ProposedViewSize(width: width, height: height)
-        guard let image = renderer.cgImage else { throw Failure(message: "Offscreen render failed: \(url.lastPathComponent)") }
-        guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
+    @MainActor static func render<V: View>(_ view: V, width: CGFloat, height: CGFloat, scheme: ColorScheme = .light, to url: URL) throws {
+        NSApp.appearance = NSAppearance(named: scheme == .dark ? .darkAqua : .aqua)
+        let framed = view.frame(width: width, height: height)
+            .background(Color(nsColor: .windowBackgroundColor))
+            .environment(\.colorScheme, scheme).tint(ClubTheme.accent)
+            .buttonStyle(.bordered)
+        // NSHostingView includes native text fields, menus and segmented controls
+        // that ImageRenderer deliberately omits. This window is never ordered on screen.
+        let host = NSHostingView(rootView: framed)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.appearance = NSApp.appearance
+        window.contentView = host
+        host.frame = NSRect(x: 0, y: 0, width: width, height: height)
+        host.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+        host.layoutSubtreeIfNeeded()
+        guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
+            throw Failure(message: "Native snapshot failed: \(url.lastPathComponent)")
+        }
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else {
             throw Failure(message: "PNG encoding failed: \(url.lastPathComponent)")
         }
+        window.contentView = nil
         try png.write(to: url, options: .atomic)
     }
 
@@ -93,12 +109,37 @@ import HidanCore
 
         let actionCard = VStack(alignment: .leading, spacing: 10) {
             Text("我的").font(.headline)
-            ClippedPoseThumbnail(model: action).frame(width: 220, height: 188).clipShape(RoundedRectangle(cornerRadius: 18))
+            ClippedPoseThumbnail(model: action).frame(width: 220, height: 188).clipShape(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
             Text(action.name).font(.system(size: 14, weight: .semibold))
             Text("视频截取 · \(String(format: "%.1f", action.segments.first.map { action.duration(of: $0) } ?? 0)) 秒")
                 .font(.caption).foregroundStyle(.secondary)
         }.padding(22)
         try render(actionCard, width: 320, height: 380, to: pngDir.appendingPathComponent("action-card.png"))
+
+        // Compact/wide layouts use the same controls as the app. Appearance is
+        // scoped to this offscreen process, never the user's system preference.
+        let musicLibrary = MusicLibraryStore(directory: libraryDir.appendingPathComponent("music-ui"))
+        try waitUntil("music library load") { !musicLibrary.isLoading }
+        let music = MusicService()
+        music.volume = 0
+        for scheme in [ColorScheme.light, .dark] {
+            let appearance = scheme == .light ? "light" : "dark"
+            for width: CGFloat in [540, 900] {
+                let name = "\(appearance)-\(Int(width))"
+                try render(player, width: width, height: 640, scheme: scheme,
+                           to: pngDir.appendingPathComponent("player-\(name).png"))
+                music.useBeat()
+                try render(MusicBar(music: music, library: musicLibrary), width: width, height: 180, scheme: scheme,
+                           to: pngDir.appendingPathComponent("beat-\(name).png"))
+                // Presentation-only long-title fixture; no audio is loaded or played.
+                music.sourceURL = URL(fileURLWithPath: "/ui-fixture-not-played.wav")
+                music.trackName = "用于检查长曲名与节拍控制换行的本地音乐"
+                music.trackBPM = 128
+                try render(MusicBar(music: music, library: musicLibrary), width: width, height: 180, scheme: scheme,
+                           to: pngDir.appendingPathComponent("music-\(name).png"))
+            }
+        }
+        music.stop()
 
         print("Library import UI probe passed: 动作库 player, import control and clip card rendered from real imports.")
         print("  action: \(action.name) · \(action.frameCount) 帧 · 片段 \(action.segments.map { "\($0.startFrame)-\($0.endFrame)x\($0.repeats)" }.joined(separator: ",")) · \(String(format: "%.2f", action.segments.reduce(0) { $0 + action.duration(of: $1) * Double($1.repeats) })) 秒")

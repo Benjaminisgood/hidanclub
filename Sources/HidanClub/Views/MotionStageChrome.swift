@@ -21,7 +21,7 @@ struct MotionStageChrome: View {
                              style: visualStyle, showSkeletonOverlay: showSkeletonOverlay,
                              showReferenceGrid: showReferenceGrid)
                 .id(identity)
-                .frame(height: 420)
+                .frame(height: 360)
                 .accessibilityLabel("\(visualStyle.title)，可拖动旋转，滚动缩放")
             if loading { ProgressView() }
             if !loading && visibleJoints < 17 {
@@ -33,7 +33,7 @@ struct MotionStageChrome: View {
                         .padding(14)
                 }.allowsHitTesting(false)
             }
-        }.clipShape(RoundedRectangle(cornerRadius: 17))
+        }.clipShape(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
     }
 
     private var visibleJoints: Int {

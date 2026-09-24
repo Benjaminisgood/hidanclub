@@ -1,9 +1,12 @@
 import SwiftUI
 
 enum ClubTheme {
-    static let accent = Color(red: 0.35, green: 0.39, blue: 0.94)
+    static let accent = Color(nsColor: .systemIndigo)
     static let lime = Color(red: 0.73, green: 0.89, blue: 0.37)
     static let peach = Color(red: 0.97, green: 0.63, blue: 0.47)
+    static let pageInset: CGFloat = 24
+    static let cornerRadius: CGFloat = 16
+    static let stage = Color(red: 0.055, green: 0.065, blue: 0.09)
 }
 
 struct Eyebrow: View {
@@ -16,9 +19,24 @@ struct Eyebrow: View {
 struct ClubCard<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
-        content.padding(22).frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
-            .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.primary.opacity(0.06)))
+        content.padding(18).frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+            .overlay(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius).strokeBorder(.primary.opacity(0.08)))
+    }
+}
+
+struct ClubPageTitle: View {
+    let title: String
+    let eyebrow: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Eyebrow(text: eyebrow)
+            Text(title).font(.system(size: 28, weight: .bold))
+            Text(subtitle).font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }
 

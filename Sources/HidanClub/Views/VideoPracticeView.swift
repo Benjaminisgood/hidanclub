@@ -20,8 +20,8 @@ struct VideoPracticeView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 8) {
                         Eyebrow(text: "CAPTURE / 把舞蹈变成练习")
-                        Text("上传一段舞，留下整套动作。").font(.system(size: 30, weight: .bold))
-                        Text("逐帧捕捉 → 保存二维动作模型 → 排列片段 → 直接跟练").foregroundStyle(.secondary)
+                        Text("上传一段舞，留下整套动作。").font(.system(size: 28, weight: .bold))
+                        Text("看清原视频，再把想练的一段留在这台 Mac 上。").font(.callout).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button("上传舞蹈视频", systemImage: "square.and.arrow.up") { importing = true }.buttonStyle(.borderedProminent)
@@ -41,7 +41,7 @@ struct VideoPracticeView: View {
                     }
                 }
                 ClubCard { CapturedMotionView(store: store, onPractice: onPractice, canPractice: canPractice) }
-            }.padding(32)
+            }.padding(ClubTheme.pageInset)
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.movie, .video]) { result in
             switch result {
@@ -89,10 +89,11 @@ private struct SourceVideoPreviewCard: View {
                 DisclosureGroup("原视频核对 · 镜像、慢放与 A–B 循环") {
                     CapturedSourceVideoView(video: video)
                 }
+            } else if video.errorMessage != nil {
+                VideoPlaybackPlaceholder(message: video.errorMessage)
             } else {
                 ContentUnavailableView("选择全身清晰的单人舞蹈视频", systemImage: "film", description: Text("MOV / MP4 · 视频和模型保留在这台 Mac · 不上传到服务器")).frame(height: 190)
             }
-            if let error = video.errorMessage { Text(error).foregroundStyle(.red) }
         }
     }
 }
@@ -101,29 +102,9 @@ private struct CapturedSourceVideoView: View {
     @ObservedObject var video: VideoService
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NativeVideoPlayer(player: video.player)
-                .scaleEffect(x: video.mirrored ? -1 : 1, y: 1)
-                .frame(height: 260).clipShape(RoundedRectangle(cornerRadius: 16))
-            HStack {
-                Button(action: video.toggle) { Label(video.isPlaying ? "暂停原视频" : "播放原视频", systemImage: video.isPlaying ? "pause.fill" : "play.fill") }
-                Text(String(format: "%.2f / %.2f 秒", video.currentTime, video.duration)).font(.caption.monospacedDigit())
-                Spacer()
-                Toggle("镜像画面", isOn: $video.mirrored).toggleStyle(.checkbox)
-                Picker("速度", selection: Binding(get: { video.rate }, set: video.setRate)) {
-                    Text("0.25×").tag(Float(0.25)); Text("0.5×").tag(Float(0.5)); Text("0.75×").tag(Float(0.75)); Text("1×").tag(Float(1))
-                }.frame(width: 130)
-            }
-            if video.duration > 0 {
-                Slider(value: Binding(get: { video.currentTime }, set: video.seek), in: 0...max(video.duration, 0.001))
-                HStack {
-                    Toggle("原视频 A–B 循环", isOn: $video.loopEnabled).toggleStyle(.checkbox)
-                    Button(String(format: "设 A：%.2f 秒", video.loopStart)) { video.loopStart = min(video.currentTime, max(0, video.loopEnd - 0.25)) }
-                    Button(String(format: "设 B：%.2f 秒", video.loopEnd)) { video.loopEnd = max(video.currentTime, min(video.duration, video.loopStart + 0.25)) }
-                    Spacer()
-                }
-            }
+            VideoPlaybackPanel(video: video)
             Text(video.name ?? "").font(.caption).foregroundStyle(.secondary)
-            Text("原视频控制用于人工核对，与下方模型编排独立播放。模型不依赖源视频即可保存并跟练。").font(.caption2).foregroundStyle(.secondary)
+            Text("这里的慢放、镜像和 A–B 只用来核对原片，不改下面的动作。").font(.caption).foregroundStyle(.secondary)
         }.padding(.top, 12)
     }
 }

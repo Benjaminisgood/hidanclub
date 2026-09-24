@@ -19,7 +19,7 @@ struct SequenceView: View {
                     Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange).textSelection(.enabled)
                 }
                 savedArrangements
-            }.padding(26)
+            }.padding(ClubTheme.pageInset)
         }
     }
 
@@ -54,11 +54,11 @@ struct SequenceView: View {
                             referenceDescription(reference)
                             Spacer(minLength: 8)
                             Button { perform { try arrangements.moveDraft(at: index, by: -1) } } label: { Image(systemName: "arrow.up") }
-                                .help("向前移动片段").disabled(index == 0 || !arrangements.canEditDraft)
+                                .accessibilityLabel("向前移动片段").help("向前移动片段").disabled(index == 0 || !arrangements.canEditDraft)
                             Button { perform { try arrangements.moveDraft(at: index, by: 1) } } label: { Image(systemName: "arrow.down") }
-                                .help("向后移动片段").disabled(index == arrangements.draft.count - 1 || !arrangements.canEditDraft)
+                                .accessibilityLabel("向后移动片段").help("向后移动片段").disabled(index == arrangements.draft.count - 1 || !arrangements.canEditDraft)
                             Button { perform { try arrangements.removeDraft(at: index) } } label: { Image(systemName: "minus.circle") }
-                                .help("从草稿移除片段").disabled(!arrangements.canEditDraft)
+                                .accessibilityLabel("从草稿移除片段").help("从草稿移除片段").disabled(!arrangements.canEditDraft)
                         }.padding(.vertical, 5)
                         if index < arrangements.draft.count - 1 { Divider() }
                     }

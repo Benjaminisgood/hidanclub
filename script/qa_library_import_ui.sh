@@ -32,6 +32,11 @@ swiftc -swift-version 5 -target "$HIDAN_UI_TARGET" \
   ${HIDAN_UI_MACRO_FLAGS[@]+"${HIDAN_UI_MACRO_FLAGS[@]}"} \
   -I "$HIDAN_UI_QA" -L "$HIDAN_UI_QA" -lHidanCore \
   -Xlinker -rpath -Xlinker "$HIDAN_UI_QA" \
+  Sources/HidanClub/Services/MusicService.swift \
+  Sources/HidanClub/Services/MusicBeatAnalyzer.swift \
+  Sources/HidanClub/Models/LibraryTrack.swift \
+  Sources/HidanClub/Stores/MusicLibraryStore.swift \
+  Sources/HidanClub/Views/MusicBar.swift \
   Sources/HidanClub/Services/PoseAnalyzer.swift \
   Sources/HidanClub/Models/CapturedMotion.swift \
   Sources/HidanClub/Models/CapturedMotionImport.swift \
@@ -40,6 +45,7 @@ swiftc -swift-version 5 -target "$HIDAN_UI_TARGET" \
   Sources/HidanClub/Stores/CapturedMotionStore.swift \
   Sources/HidanClub/Stores/CapturedLibraryStore.swift \
   Sources/HidanClub/Stores/AISTArrangementStore.swift \
+  Sources/HidanClub/Support/PlaybackControls.swift \
   Sources/HidanClub/Support/Theme.swift \
   Sources/HidanClub/Views/ImportedMotionLibraryView.swift \
   Sources/HidanClub/Views/LibraryImportView.swift \

@@ -1,20 +1,6 @@
 import HidanCore
 import SwiftUI
 
-struct CircularPlayButton: View {
-    var playing: Bool
-    var help: String
-    var action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: playing ? "pause.fill" : "play.fill").frame(width: 24, height: 24)
-        }
-        .buttonStyle(.borderedProminent)
-        .clipShape(Circle())
-        .help(help)
-    }
-}
-
 struct MusicBar: View {
     @ObservedObject var music: MusicService
     @ObservedObject var library: MusicLibraryStore
@@ -37,11 +23,11 @@ struct MusicBar: View {
                 Text(message).font(.caption).foregroundStyle(.red).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(.horizontal, 20).padding(.vertical, 12)
-        .background(music.tempoMode == .beat ? ClubTheme.lime.opacity(0.16) : ClubTheme.accent.opacity(0.12))
-        .overlay(alignment: .top) {
-            Rectangle().fill(music.tempoMode == .beat ? ClubTheme.lime : ClubTheme.accent).frame(height: 2)
-        }
+        .padding(.horizontal, ClubTheme.pageInset).padding(.vertical, 12)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+        .buttonStyle(.bordered)
+        .controlSize(.regular)
         .onAppear { restoreSavedTrack(); syncDraft() }
         .onChange(of: library.isLoading) { _, _ in restoreSavedTrack(); syncDraft() }
         .onChange(of: library.tracks) { _, _ in adoptLibraryTempo(); syncDraft() }
@@ -76,7 +62,7 @@ struct MusicBar: View {
         HStack(spacing: 14) {
             musicIdentity
             musicPlay
-            musicTempo
+            musicTempo.fixedSize(horizontal: true, vertical: false)
             Spacer(minLength: 8)
             volumeControl
             libraryButton
@@ -101,11 +87,11 @@ struct MusicBar: View {
     private var beatIdentity: some View {
         HStack(spacing: 12) {
             ZStack {
-                Circle().fill(ClubTheme.lime.opacity(0.22)).frame(width: 44, height: 44)
-                Image(systemName: "metronome").foregroundStyle(ClubTheme.lime).font(.title3)
+                RoundedRectangle(cornerRadius: 10).fill(ClubTheme.accent.opacity(0.12)).frame(width: 44, height: 44)
+                Image(systemName: "metronome").foregroundStyle(ClubTheme.accent).font(.title3)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("原创节拍").font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.2).foregroundStyle(ClubTheme.lime)
+                Text("原创节拍").font(.system(size: 9, weight: .bold, design: .monospaced)).tracking(1.2).foregroundStyle(ClubTheme.accent)
                 Text(library.selectedBeat?.name ?? "自由速度").font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 Text(beatCaption).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
             }
@@ -116,7 +102,7 @@ struct MusicBar: View {
     private var musicIdentity: some View {
         HStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12).fill(ClubTheme.accent.opacity(0.18)).frame(width: 44, height: 44)
+                RoundedRectangle(cornerRadius: 10).fill(ClubTheme.accent.opacity(0.12)).frame(width: 44, height: 44)
                 Image(systemName: "waveform").foregroundStyle(ClubTheme.accent).font(.title3)
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -130,7 +116,7 @@ struct MusicBar: View {
 
     private var beatPlay: some View {
         CircularPlayButton(playing: music.isPlaying, help: onPlayToggle == nil ? "播放或暂停原创节拍" : "播放或暂停动作和节拍", action: onPlayToggle ?? music.toggle)
-            .tint(ClubTheme.lime)
+            .tint(ClubTheme.accent)
     }
 
     private var musicPlay: some View {
@@ -143,17 +129,17 @@ struct MusicBar: View {
             Text("\(Int(music.bpm.rounded()))").font(.system(size: 28, weight: .bold, design: .rounded).monospacedDigit())
                 .frame(width: 64, alignment: .trailing)
             VStack(alignment: .leading, spacing: 2) {
-                Text("BPM").font(.caption2.weight(.semibold)).foregroundStyle(ClubTheme.lime)
-                Slider(value: Binding(get: { music.bpm }, set: { music.bpm = $0; library.rememberBeatTempo($0) }), in: MotionTempo.beatRange, step: 1)
+                Text("BPM").font(.caption2.weight(.semibold)).foregroundStyle(ClubTheme.accent)
+                Slider(value: Binding(get: { music.bpm }, set: { music.bpm = $0.rounded(); library.rememberBeatTempo($0.rounded()) }), in: MotionTempo.beatRange)
                     .frame(minWidth: 110, maxWidth: 180)
-                    .tint(ClubTheme.lime)
+                    .tint(ClubTheme.accent)
                     .accessibilityLabel("原创节拍 BPM")
             }
         }
     }
 
     private var musicTempo: some View {
-        HStack(spacing: 10) {
+        ControlFlow(spacing: 10) {
             Picker("动作倍数", selection: Binding(get: { music.beatMultiplier }, set: { setMultiplier($0) })) {
                 ForEach(BeatMultiplier.allCases) { Text($0.label).tag($0) }
             }
@@ -164,17 +150,19 @@ struct MusicBar: View {
             .tint(ClubTheme.accent)
             .help("动作相对音乐节拍的倍数：\(music.beatMultiplier.summary)。音乐本身的速度不变。")
             .accessibilityIdentifier("music.multiplier")
-            Text(music.beatMultiplier.summary).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-            TextField("BPM", text: bpmField)
-                .textFieldStyle(.roundedBorder)
-                .font(.caption.monospacedDigit())
-                .frame(width: 52)
-                .focused($bpmFocused)
-                .onSubmit { commitBPM() }
-                .onChange(of: bpmFocused) { _, focused in if !focused { commitBPM() } }
-                .help("识别出的节拍。不对就改成听到的 BPM，30 到 300。")
-                .accessibilityIdentifier("music.bpm")
-            Text("BPM").font(.caption).foregroundStyle(.secondary)
+
+            HStack(spacing: 5) {
+                TextField("BPM", text: bpmField)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption.monospacedDigit())
+                    .frame(width: 52)
+                    .focused($bpmFocused)
+                    .onSubmit { commitBPM() }
+                    .onChange(of: bpmFocused) { _, focused in if !focused { commitBPM() } }
+                    .help("识别出的节拍。不对就改成听到的 BPM，30 到 300。")
+                    .accessibilityIdentifier("music.bpm")
+                Text("BPM").font(.caption).foregroundStyle(.secondary)
+            }
             if let motion = music.motionBeatBPM {
                 Text("动作 \(Int(motion.rounded()))").font(.caption.monospacedDigit()).foregroundStyle(.secondary).lineLimit(1)
             }
@@ -190,7 +178,8 @@ struct MusicBar: View {
         Button(action: onOpenLibrary) {
             Image(systemName: "music.note.list")
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.bordered)
+        .accessibilityLabel("打开音乐库")
         .help("打开音乐库")
         .accessibilityIdentifier("music.openLibrary")
     }
@@ -198,7 +187,7 @@ struct MusicBar: View {
     private var volumeControl: some View {
         HStack(spacing: 8) {
             Image(systemName: "speaker.wave.2").foregroundStyle(.secondary)
-            Slider(value: $music.volume, in: 0...1).frame(width: 76).help("音量")
+            Slider(value: $music.volume, in: 0...1).frame(width: 76).help("音量").accessibilityLabel("音量")
         }
     }
 
@@ -214,6 +203,7 @@ struct MusicBar: View {
             Image(systemName: "ellipsis.circle")
         }
         .menuStyle(.borderlessButton)
+        .accessibilityLabel("音乐选项")
         .frame(width: 28)
         .help("重新识别，或改回识别结果")
         .disabled(music.trackID == nil)

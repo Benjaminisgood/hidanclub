@@ -23,9 +23,8 @@ struct ResourcesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                Eyebrow(text: "RESEARCH / 有出处的学习")
-                Text("动作背后，也有知识。").font(.system(size: 30, weight: .bold))
-                Text("从街舞文化到动作数据，区分“可以阅读”和“可以放进应用”。").foregroundStyle(.secondary)
+                ClubPageTitle(title: "资源库", eyebrow: "RESOURCES",
+                              subtitle: "从街舞文化到动作数据，了解动作背后的知识。")
                 TextField("搜索资源、技术或舞蹈数据", text: $query).textFieldStyle(.roundedBorder).frame(maxWidth: 440)
                 ForEach(resources.filter { query.isEmpty || ($0.title + $0.summary + $0.category).localizedCaseInsensitiveContains(query) }) { item in
                     ClubCard {
@@ -43,7 +42,7 @@ struct ResourcesView: View {
                 }
                 Text("调研日期：2026-09-09。完整来源与数据校验见项目 docs。AIST++ 坐标存放在本机应用支持目录，独立于应用包；原视频、音乐及模型权重尚未下载。")
                     .font(.caption).foregroundStyle(.secondary)
-            }.padding(32)
+            }.padding(ClubTheme.pageInset)
         }
     }
 }

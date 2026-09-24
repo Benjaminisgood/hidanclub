@@ -10,13 +10,20 @@ struct ClippedMotionDetail: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Button("全部动作", systemImage: "chevron.left", action: onBack)
-                    .buttonStyle(.plain).foregroundStyle(.secondary)
-                Text(model.name).font(.title2.bold())
-                Text("从视频截出的二维动作 · \(String(format: "%.1f", model.segments.first.map { model.duration(of: $0) } ?? 0)) 秒")
-                    .font(.callout).foregroundStyle(.secondary)
-                CapturedMotionPlayerView(playback: playback).frame(height: 420)
-                CapturedMotionPreviewControls(playback: playback, practice: onPractice, canPractice: canPractice)
+                HStack(spacing: 8) {
+                    PlayerIconButton(title: "全部动作", symbol: "chevron.left", action: onBack)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(model.name).font(.title3.weight(.semibold)).lineLimit(1)
+                        Text("从视频截出的二维动作 · \(String(format: "%.1f", model.segments.first.map { model.duration(of: $0) } ?? 0)) 秒")
+                            .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                    Button("开始练习", systemImage: "figure.dance", action: onPractice)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!canPractice)
+                }
+                CapturedMotionPlayerView(playback: playback).frame(height: 320)
+                CapturedMotionPreviewControls(playback: playback)
                 if !canPractice { Text("先结束当前练习，再练这一段。").font(.caption).foregroundStyle(.secondary) }
                 Text(model.qualityNotice).font(.caption).foregroundStyle(.secondary)
             }.padding(24)

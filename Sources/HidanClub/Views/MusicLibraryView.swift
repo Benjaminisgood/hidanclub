@@ -20,7 +20,7 @@ struct MusicLibraryView: View {
                     Text(error).font(.caption).foregroundStyle(.red).lineLimit(4)
                 }
             }
-            .padding(32)
+            .padding(ClubTheme.pageInset)
             .frame(maxWidth: 980, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -49,11 +49,11 @@ struct MusicLibraryView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 16) {
+        HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Eyebrow(text: "MUSIC")
                 Text("音乐库").font(.system(size: 28, weight: .bold))
-                Text("原创节拍和导入的音乐都在这里。点一下，底部的播放器就换成那一种。")
+                Text("选择一套原创节拍，或用喜欢的音乐开始练习。")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -105,9 +105,9 @@ struct MusicLibraryView: View {
         let selected = music.tempoMode == .beat && library.selectedBeatID == preset.id
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: "metronome").foregroundStyle(ClubTheme.lime)
+                Image(systemName: "metronome").foregroundStyle(ClubTheme.accent)
                 Spacer()
-                if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(ClubTheme.lime) }
+                if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(ClubTheme.accent) }
             }
             Text(preset.name).font(.system(size: 16, weight: .semibold)).lineLimit(1)
             Text("\(Int(preset.bpm.rounded())) BPM · 8 拍").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
@@ -116,16 +116,16 @@ struct MusicLibraryView: View {
                     .disabled(selected && abs(music.bpm - preset.bpm) < 0.5)
                 Spacer()
                 Button { draftName = preset.name; renaming = preset } label: { Image(systemName: "pencil") }
-                    .buttonStyle(.borderless).help("改名")
+                    .buttonStyle(.borderless).accessibilityLabel("改名").help("改名")
                 Button { library.deleteBeat(preset.id) } label: { Image(systemName: "trash") }
-                    .buttonStyle(.borderless).help("删除这一套")
+                    .buttonStyle(.borderless).accessibilityLabel("删除这一套").help("删除这一套")
             }
             .controlSize(.small)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(selected ? ClubTheme.lime.opacity(0.14) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(selected ? ClubTheme.lime.opacity(0.7) : Color.primary.opacity(0.06), lineWidth: 1))
+        .background(selected ? ClubTheme.accent.opacity(0.14) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(selected ? ClubTheme.accent.opacity(0.7) : Color.primary.opacity(0.06), lineWidth: 1))
     }
 
     private func trackRow(_ track: LibraryTrack) -> some View {
@@ -141,14 +141,14 @@ struct MusicLibraryView: View {
             }
             Spacer(minLength: 8)
             if selected { Image(systemName: "checkmark.circle.fill").foregroundStyle(ClubTheme.accent) }
-            Button(selected ? "正在播放" : "播放") { play(track) }
+            Button(selected ? (music.isPlaying ? "正在播放" : "已选择") : "选择") { play(track) }
                 .disabled(selected)
                 .controlSize(.small)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(selected ? ClubTheme.accent.opacity(0.10) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(selected ? ClubTheme.accent.opacity(0.55) : Color.primary.opacity(0.06), lineWidth: 1))
+        .background(selected ? ClubTheme.accent.opacity(0.10) : Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
+        .overlay(RoundedRectangle(cornerRadius: ClubTheme.cornerRadius).strokeBorder(selected ? ClubTheme.accent.opacity(0.55) : Color.primary.opacity(0.06), lineWidth: 1))
     }
 
     private func trackDetail(_ track: LibraryTrack) -> String {

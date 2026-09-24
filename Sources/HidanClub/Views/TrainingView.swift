@@ -92,8 +92,7 @@ struct TrainingView: View {
     }
     private var header: some View {
         HStack(spacing: 8) {
-            Button(action: onBack) { Image(systemName: "chevron.left") }
-                .buttonStyle(.plain).foregroundStyle(.secondary).help("返回")
+            PlayerIconButton(title: "返回", symbol: "chevron.left", action: onBack)
             Text(headerTitle).font(.title3.weight(.semibold)).lineLimit(1)
             Text(headerDetail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             Spacer(minLength: 8)
@@ -137,7 +136,7 @@ struct TrainingView: View {
                     camera.start()
                 }.buttonStyle(.borderedProminent)
             }
-        }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        }.padding(18).background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
     }
     private var trainingSurface: some View {
         Group {
@@ -230,18 +229,17 @@ struct TrainingView: View {
                 if store.clock.state == .paused { Text("已暂停").font(.caption2).foregroundStyle(.secondary) }
                 Spacer(minLength: 8)
             }
-            HStack(spacing: 6) {
+            ControlFlow(spacing: 8) {
                 Button(action: primaryAction) {
                     Label(store.clock.state == .running ? "暂停" : store.clock.state == .paused ? "继续" : "开始练习", systemImage: store.clock.state == .running ? "pause.fill" : "play.fill")
-                }.disabled(store.clock.state != .running && !demonstration.isReady)
+                }.buttonStyle(.borderedProminent).disabled(store.clock.state != .running && !demonstration.isReady)
                 if store.active {
                     Button("下一段") { demonstration.advance(); if !store.active { music.stop() } }
                     Button("结束") { demonstration.stop(); music.stop() }
                 }
-                TrainingAISTTransport(demonstration: demonstration)
-                Spacer(minLength: 0)
+                DemonstrationMirrorToggle(player: demonstration.player)
+                PlayerIconButton(title: "重置视角", symbol: "arrow.counterclockwise") { demonstration.player.resetCamera += 1 }
             }
-            .controlSize(.small)
             Text(store.snapshot.currentBlock?.cue ?? "先看动作，再开始跟练。")
                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
         }
@@ -361,7 +359,7 @@ struct TrainingView: View {
                 Slider(value: Binding(get: { Double(store.effort) }, set: { store.effort = Int($0) }), in: 1...10, step: 1).frame(width: 180)
                 Text("\(store.effort) / 10 · 自我记录").font(.caption).foregroundStyle(.secondary)
             }
-        }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        }.padding(18).background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
     }
 }
 
@@ -390,27 +388,18 @@ private struct TrainingAISTStage: View {
         }
     }
 }
+private struct DemonstrationMirrorToggle: View {
+    @ObservedObject var player: AISTLibraryStore
+    var body: some View {
+        PlayerToggle(title: "镜像", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right", isOn: $player.mirrored)
+    }
+}
+
 private struct TrainingFrameObserver<Content: View>: View {
     @ObservedObject var playback: AISTPlaybackState
     @ViewBuilder var content: () -> Content
     var body: some View { content() }
 }
-private struct TrainingAISTTransport: View {
-    @ObservedObject var demonstration: TrainingDemonstrationStore
-    @ObservedObject private var player: AISTLibraryStore
-    @ObservedObject private var playback: AISTPlaybackState
-    init(demonstration: TrainingDemonstrationStore) {
-        self.demonstration = demonstration; self.player = demonstration.player
-        self.playback = demonstration.player.playback
-    }
-    var body: some View {
-        HStack(spacing: 9) {
-            Button("镜像") { player.mirrored.toggle() }.help("镜像示范")
-            Button { player.resetCamera += 1 } label: { Image(systemName: "arrow.counterclockwise") }.help("重置示范视角")
-        }.controlSize(.small).font(.caption)
-    }
-}
-
 private struct GeneratedSessionControls: View {
     @ObservedObject var training: TrainingStore
     @ObservedObject var practice: PracticeMotionStore
@@ -432,20 +421,18 @@ private struct GeneratedSessionControls: View {
                 Text(clockText(training.snapshot.remainingSeconds)).font(.title3.monospacedDigit())
                 Spacer(minLength: 8)
             }
-            HStack(spacing: 6) {
+            ControlFlow(spacing: 8) {
                 Button(action: primary) {
                     Label(training.clock.state == .running ? "暂停" : training.clock.state == .paused ? "继续" : "开始练习",
                           systemImage: training.clock.state == .running ? "pause.fill" : "play.fill")
-                }.disabled(practice.motion == nil && training.clock.state != .running)
+                }.buttonStyle(.borderedProminent).disabled(practice.motion == nil && training.clock.state != .running)
                 if training.active {
                     Button("下一段") { training.advance(); if !training.active { practice.pause() } }
                     Button("结束") { training.stop(); practice.pause(); music.pause() }
                 }
-                Button("镜像") { practice.mirrored.toggle() }.help("镜像示范")
-                Button { practice.resetCamera += 1 } label: { Image(systemName: "arrow.counterclockwise") }.help("重置示范视角")
-                Spacer(minLength: 0)
+                PlayerToggle(title: "镜像", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right", isOn: $practice.mirrored)
+                PlayerIconButton(title: "重置视角", symbol: "arrow.counterclockwise") { practice.resetCamera += 1 }
             }
-            .controlSize(.small)
             Text(training.snapshot.currentBlock?.cue ?? "先看动作，再开始跟练。")
                 .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
         }
@@ -466,32 +453,28 @@ private struct CapturedTrainingControls: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(playback.isCompleted ? (playback.hasSkippedSegments ? "这段动作已播放完 · 中途跳过了片段" : "这段动作已播放完") : playback.currentSegment?.name ?? "还没有可跟练的动作")
-                        .font(.title3.weight(.semibold))
-                    if let segment = playback.currentSegment {
-                        Text("片段 \(playback.segmentIndex + 1) · 第 \(playback.repetitionIndex + 1) / \(segment.repeats) 次 · \(clockText(playback.elapsed)) / \(clockText(playback.planDuration))")
-                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                    } else { Text("在视频里完成识别，或从动作库打开截出的动作。").font(.caption).foregroundStyle(.secondary) }
-                }
-                Spacer()
-                Button(playback.isPlaying ? "暂停跟练" : playback.isCompleted ? "再练一轮" : "开始跟练", systemImage: playback.isPlaying ? "pause.fill" : "play.fill") {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(playback.isCompleted ? (playback.hasSkippedSegments ? "这段动作已播放完 · 中途跳过了片段" : "这段动作已播放完") : playback.currentSegment?.name ?? "还没有可跟练的动作")
+                    .font(.title3.weight(.semibold))
+                if let segment = playback.currentSegment {
+                    Text("片段 \(playback.segmentIndex + 1) · 第 \(playback.repetitionIndex + 1) / \(segment.repeats) 次 · \(clockText(playback.elapsed)) / \(clockText(playback.planDuration))")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                } else { Text("在视频里完成识别，或从动作库打开截出的动作。").font(.caption).foregroundStyle(.secondary) }
+            }
+            ControlFlow(spacing: 8) {
+                Button(playback.isPlaying ? "暂停" : playback.isCompleted ? "再练一轮" : "开始练习", systemImage: playback.isPlaying ? "pause.fill" : "play.fill") {
                     playback.toggle()
                 }.buttonStyle(.borderedProminent).disabled(!playback.hasPlayableMotion)
                 Button("下一片段") { playback.nextSegment() }.disabled(!playback.hasPlayableMotion)
                 Button("结束") { playback.stop() }.disabled(!playback.hasPlayableMotion)
-            }
-            HStack {
-                Picker("示范速度", selection: $playback.speed) {
+                PlayerToggle(title: "镜像", symbol: "arrow.left.and.right.righttriangle.left.righttriangle.right", isOn: $playback.mirrored)
+                PlayerToggle(title: "循环", symbol: "repeat", isOn: $playback.loop)
+                Picker("速度", selection: $playback.speed) {
                     Text("0.25×").tag(0.25); Text("0.5×").tag(0.5); Text("0.75×").tag(0.75); Text("1×").tag(1.0)
-                }.frame(width: 155)
-                Toggle("镜像示范", isOn: $playback.mirrored).toggleStyle(.checkbox)
-                Toggle("整段循环", isOn: $playback.loop).toggleStyle(.checkbox)
-                Spacer()
-            }.controlSize(.small).font(.caption)
+                }.frame(width: 132)
+            }
             Text("按原视频时间戳逐帧示范；缺失或多人帧保留并提示。当前计时是播放进度，尚未记入练习录。")
                 .font(.caption2).foregroundStyle(.secondary)
-        }.padding(15).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        }.padding(18).background(.regularMaterial, in: RoundedRectangle(cornerRadius: ClubTheme.cornerRadius))
     }
 }
