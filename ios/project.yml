@@ -1,0 +1,59 @@
+name: HidanClubIOS
+options:
+  bundleIdPrefix: app.hidanclub
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  HidanClub:
+    path: ..
+targets:
+  HidanClub:
+    type: application
+    platform: iOS
+    productName: HidanClub
+    sources:
+      - path: App
+      # Reference the resource subfolders individually so the app bundle top level
+      # contains AIST/, Brand/, NOTICE.md instead of a "Resources" directory.
+      # A top-level "Resources" dir makes installd/LaunchServices mistake the flat
+      # iOS bundle for a macOS layout (Contents/Info.plist) -> IXErrorDomain 13.
+      - path: ../Sources/HidanClub/Resources/AIST
+        type: folder
+        buildPhase: resources
+        optional: true
+      - path: ../Sources/HidanClub/Resources/Brand
+        type: folder
+        buildPhase: resources
+        optional: true
+      - path: ../Sources/HidanClub/Resources/NOTICE.md
+        buildPhase: resources
+        optional: true
+    dependencies:
+      - package: HidanClub
+        product: HidanCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.hidanclub.ios
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_NSCameraUsageDescription: "HidanClub 使用相机进行舞蹈跟练与动作提示（本 iOS 版本暂未启用拍摄）。"
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "HidanClub 使用麦克风分析音乐节拍，帮助你按节奏练习。"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        ENABLE_PREVIEWS: YES
+schemes:
+  HidanClubIOS:
+    build:
+      targets:
+        HidanClub: all
+    run:
+      config: Debug
+    archive:
+      config: Release

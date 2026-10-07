@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "HidanClub",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [.executable(name: "HidanClub", targets: ["HidanClub"]), .library(name: "HidanCore", targets: ["HidanCore"])],
     targets: [
         .target(name: "HidanCore"),
