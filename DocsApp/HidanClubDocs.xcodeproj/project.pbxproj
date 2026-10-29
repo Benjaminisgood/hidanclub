@@ -1,0 +1,450 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03B753E252CD2BA6FFF2DC61 /* MarkdownViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 201AC4FBAF0F02B6551585AF /* MarkdownViews.swift */; };
+		08CAA4117E37D324CFD07C0C /* music-library.md in Resources */ = {isa = PBXBuildFile; fileRef = A44C4C8D529D108D99C03A51 /* music-library.md */; };
+		1CC98AA355CF57FDAD01CB8A /* party.md in Resources */ = {isa = PBXBuildFile; fileRef = 678354E47B19143390AA1522 /* party.md */; };
+		23538EC8BCC02E16DC58AB95 /* architecture.md in Resources */ = {isa = PBXBuildFile; fileRef = 6E47A7322CA9E56B032E57F2 /* architecture.md */; };
+		2641CAABAC28EB2279060BA6 /* roadmap.md in Resources */ = {isa = PBXBuildFile; fileRef = CA600DC534E32B5D1EEF206B /* roadmap.md */; };
+		32B5A279060029BC47C4C549 /* scripts.md in Resources */ = {isa = PBXBuildFile; fileRef = B222EB5134A3A4B466C867B4 /* scripts.md */; };
+		3333B3C88B9808B500820B71 /* overview.md in Resources */ = {isa = PBXBuildFile; fileRef = 076A150EBE9A08141B021841 /* overview.md */; };
+		34EB982733B0C9C5DABFB728 /* motion-library.md in Resources */ = {isa = PBXBuildFile; fileRef = 73BFE08E7FB76187C193D3F5 /* motion-library.md */; };
+		420083837E09CDEE3BC8854A /* segmentation.md in Resources */ = {isa = PBXBuildFile; fileRef = BD4CA17A86F29E5BB9EC4862 /* segmentation.md */; };
+		5089557814596306D9ACCCD8 /* training-studio.md in Resources */ = {isa = PBXBuildFile; fileRef = 408CD8D2697A641EB1232917 /* training-studio.md */; };
+		57E8405BCEF4E3BF569147F8 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF45B5A00BAB4C87574942FF /* Theme.swift */; };
+		5E1647A5DA318CCD891E8D24 /* data-privacy.md in Resources */ = {isa = PBXBuildFile; fileRef = 4676D4089E04144D18506043 /* data-privacy.md */; };
+		6360769CC01BAB39F06B4879 /* aist-dataset.md in Resources */ = {isa = PBXBuildFile; fileRef = 6388AEEF48ED88B1200E181D /* aist-dataset.md */; };
+		66694F6A0FA63B7891261D72 /* HidanDocsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 091E3CA2DC0757A5FC9F8C57 /* HidanDocsApp.swift */; };
+		8C32772C5AEAD293B51E4E0E /* ArticleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 483778A5FE8FEA679F3F2ADE /* ArticleView.swift */; };
+		90404A77589D0B97E176EC46 /* live-camera.md in Resources */ = {isa = PBXBuildFile; fileRef = C84971849CA20A3A8B0F6BDA /* live-camera.md */; };
+		AF8F62DE98F9332993A7F3F9 /* DocLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E7660F5C23FA9EF4EE086E0 /* DocLibrary.swift */; };
+		B64E12C1DC9FACE07E8CED4F /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDF6E888DBA156170DD016D /* MarkdownParser.swift */; };
+		B6F1B608B838E608A37949DE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F96C9258ACC9E1D84380628 /* HomeView.swift */; };
+		B86E576370C2B1F90F4F4D42 /* faq.md in Resources */ = {isa = PBXBuildFile; fileRef = B7C36B261185E278480DD863 /* faq.md */; };
+		C871351C3D537504674F7115 /* first-session.md in Resources */ = {isa = PBXBuildFile; fileRef = 535AE58713EDF0EDEE219879 /* first-session.md */; };
+		EE43F9F7A07EDC0069DF2958 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BB34D3A27AB48C1E2DE9EF /* SidebarView.swift */; };
+		F83623FD9ABDB54856A837BB /* ui-tour.md in Resources */ = {isa = PBXBuildFile; fileRef = 4BE118C484D408EAA7CA7B70 /* ui-tour.md */; };
+		F9F25189C7F0D6DE247399B3 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6B03539EFCFE3D343E3452 /* RootView.swift */; };
+		FACD52B01A6624A6073DDAD7 /* verification.md in Resources */ = {isa = PBXBuildFile; fileRef = 320D54483EE4D351CE555914 /* verification.md */; };
+		FCE2FC200803AC3A38AB9804 /* quickstart.md in Resources */ = {isa = PBXBuildFile; fileRef = 35C5A24F1C2E70304A8EE832 /* quickstart.md */; };
+		FD6ABE0537F6671CC94D482B /* video-library.md in Resources */ = {isa = PBXBuildFile; fileRef = 35C7DFF78E5DEB12006EE7AC /* video-library.md */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		04BB34D3A27AB48C1E2DE9EF /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		076A150EBE9A08141B021841 /* overview.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = overview.md; sourceTree = "<group>"; };
+		091E3CA2DC0757A5FC9F8C57 /* HidanDocsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HidanDocsApp.swift; sourceTree = "<group>"; };
+		201AC4FBAF0F02B6551585AF /* MarkdownViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownViews.swift; sourceTree = "<group>"; };
+		2EDF6E888DBA156170DD016D /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
+		320D54483EE4D351CE555914 /* verification.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = verification.md; sourceTree = "<group>"; };
+		35C5A24F1C2E70304A8EE832 /* quickstart.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = quickstart.md; sourceTree = "<group>"; };
+		35C7DFF78E5DEB12006EE7AC /* video-library.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "video-library.md"; sourceTree = "<group>"; };
+		408CD8D2697A641EB1232917 /* training-studio.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "training-studio.md"; sourceTree = "<group>"; };
+		4676D4089E04144D18506043 /* data-privacy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "data-privacy.md"; sourceTree = "<group>"; };
+		483778A5FE8FEA679F3F2ADE /* ArticleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleView.swift; sourceTree = "<group>"; };
+		4BE118C484D408EAA7CA7B70 /* ui-tour.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "ui-tour.md"; sourceTree = "<group>"; };
+		4E7660F5C23FA9EF4EE086E0 /* DocLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocLibrary.swift; sourceTree = "<group>"; };
+		535AE58713EDF0EDEE219879 /* first-session.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "first-session.md"; sourceTree = "<group>"; };
+		6388AEEF48ED88B1200E181D /* aist-dataset.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "aist-dataset.md"; sourceTree = "<group>"; };
+		678354E47B19143390AA1522 /* party.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = party.md; sourceTree = "<group>"; };
+		6E47A7322CA9E56B032E57F2 /* architecture.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = architecture.md; sourceTree = "<group>"; };
+		6F96C9258ACC9E1D84380628 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		73BFE08E7FB76187C193D3F5 /* motion-library.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "motion-library.md"; sourceTree = "<group>"; };
+		7B47B6C450AA7DACC54DB0A2 /* HidanClubDocs.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HidanClubDocs.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A44C4C8D529D108D99C03A51 /* music-library.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "music-library.md"; sourceTree = "<group>"; };
+		AF6B03539EFCFE3D343E3452 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		B222EB5134A3A4B466C867B4 /* scripts.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = scripts.md; sourceTree = "<group>"; };
+		B7C36B261185E278480DD863 /* faq.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = faq.md; sourceTree = "<group>"; };
+		BD4CA17A86F29E5BB9EC4862 /* segmentation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = segmentation.md; sourceTree = "<group>"; };
+		BF45B5A00BAB4C87574942FF /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		C84971849CA20A3A8B0F6BDA /* live-camera.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "live-camera.md"; sourceTree = "<group>"; };
+		CA600DC534E32B5D1EEF206B /* roadmap.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = roadmap.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		2F95EA2ABB4E9D418F0F3DD2 /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+				6388AEEF48ED88B1200E181D /* aist-dataset.md */,
+				6E47A7322CA9E56B032E57F2 /* architecture.md */,
+				4676D4089E04144D18506043 /* data-privacy.md */,
+				B7C36B261185E278480DD863 /* faq.md */,
+				535AE58713EDF0EDEE219879 /* first-session.md */,
+				C84971849CA20A3A8B0F6BDA /* live-camera.md */,
+				73BFE08E7FB76187C193D3F5 /* motion-library.md */,
+				A44C4C8D529D108D99C03A51 /* music-library.md */,
+				076A150EBE9A08141B021841 /* overview.md */,
+				678354E47B19143390AA1522 /* party.md */,
+				35C5A24F1C2E70304A8EE832 /* quickstart.md */,
+				CA600DC534E32B5D1EEF206B /* roadmap.md */,
+				B222EB5134A3A4B466C867B4 /* scripts.md */,
+				BD4CA17A86F29E5BB9EC4862 /* segmentation.md */,
+				408CD8D2697A641EB1232917 /* training-studio.md */,
+				4BE118C484D408EAA7CA7B70 /* ui-tour.md */,
+				320D54483EE4D351CE555914 /* verification.md */,
+				35C7DFF78E5DEB12006EE7AC /* video-library.md */,
+			);
+			path = Docs;
+			sourceTree = "<group>";
+		};
+		714D825F473539A99830F783 = {
+			isa = PBXGroup;
+			children = (
+				A1FF87660569FCA4A2E2038B /* Resources */,
+				AF9C2314AD41D879106E438C /* Sources */,
+				FA48D5E5D0E5CB33A46310A6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1FF87660569FCA4A2E2038B /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2F95EA2ABB4E9D418F0F3DD2 /* Docs */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AF9C2314AD41D879106E438C /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				483778A5FE8FEA679F3F2ADE /* ArticleView.swift */,
+				4E7660F5C23FA9EF4EE086E0 /* DocLibrary.swift */,
+				091E3CA2DC0757A5FC9F8C57 /* HidanDocsApp.swift */,
+				6F96C9258ACC9E1D84380628 /* HomeView.swift */,
+				2EDF6E888DBA156170DD016D /* MarkdownParser.swift */,
+				201AC4FBAF0F02B6551585AF /* MarkdownViews.swift */,
+				AF6B03539EFCFE3D343E3452 /* RootView.swift */,
+				04BB34D3A27AB48C1E2DE9EF /* SidebarView.swift */,
+				BF45B5A00BAB4C87574942FF /* Theme.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		FA48D5E5D0E5CB33A46310A6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7B47B6C450AA7DACC54DB0A2 /* HidanClubDocs.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		98B85B1DFFADD1B2AD7734A0 /* HidanClubDocs */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 97C9442EB1348EB77BF4A2F2 /* Build configuration list for PBXNativeTarget "HidanClubDocs" */;
+			buildPhases = (
+				D3148B3ED1ED1E31AF96FE9D /* Sources */,
+				B8D0673B7FFF239662A3831F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HidanClubDocs;
+			packageProductDependencies = (
+			);
+			productName = HidanClubDocs;
+			productReference = 7B47B6C450AA7DACC54DB0A2 /* HidanClubDocs.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2F254454212097A2FEECFD80 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					98B85B1DFFADD1B2AD7734A0 = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 9812DAFCA8EABA4EB55DC462 /* Build configuration list for PBXProject "HidanClubDocs" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 714D825F473539A99830F783;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = FA48D5E5D0E5CB33A46310A6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				98B85B1DFFADD1B2AD7734A0 /* HidanClubDocs */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		B8D0673B7FFF239662A3831F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6360769CC01BAB39F06B4879 /* aist-dataset.md in Resources */,
+				23538EC8BCC02E16DC58AB95 /* architecture.md in Resources */,
+				5E1647A5DA318CCD891E8D24 /* data-privacy.md in Resources */,
+				B86E576370C2B1F90F4F4D42 /* faq.md in Resources */,
+				C871351C3D537504674F7115 /* first-session.md in Resources */,
+				90404A77589D0B97E176EC46 /* live-camera.md in Resources */,
+				34EB982733B0C9C5DABFB728 /* motion-library.md in Resources */,
+				08CAA4117E37D324CFD07C0C /* music-library.md in Resources */,
+				3333B3C88B9808B500820B71 /* overview.md in Resources */,
+				1CC98AA355CF57FDAD01CB8A /* party.md in Resources */,
+				FCE2FC200803AC3A38AB9804 /* quickstart.md in Resources */,
+				2641CAABAC28EB2279060BA6 /* roadmap.md in Resources */,
+				32B5A279060029BC47C4C549 /* scripts.md in Resources */,
+				420083837E09CDEE3BC8854A /* segmentation.md in Resources */,
+				5089557814596306D9ACCCD8 /* training-studio.md in Resources */,
+				F83623FD9ABDB54856A837BB /* ui-tour.md in Resources */,
+				FACD52B01A6624A6073DDAD7 /* verification.md in Resources */,
+				FD6ABE0537F6671CC94D482B /* video-library.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D3148B3ED1ED1E31AF96FE9D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C32772C5AEAD293B51E4E0E /* ArticleView.swift in Sources */,
+				AF8F62DE98F9332993A7F3F9 /* DocLibrary.swift in Sources */,
+				66694F6A0FA63B7891261D72 /* HidanDocsApp.swift in Sources */,
+				B6F1B608B838E608A37949DE /* HomeView.swift in Sources */,
+				B64E12C1DC9FACE07E8CED4F /* MarkdownParser.swift in Sources */,
+				03B753E252CD2BA6FFF2DC61 /* MarkdownViews.swift in Sources */,
+				F9F25189C7F0D6DE247399B3 /* RootView.swift in Sources */,
+				EE43F9F7A07EDC0069DF2958 /* SidebarView.swift in Sources */,
+				57E8405BCEF4E3BF569147F8 /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		352C16820608234B284102F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Hidan Club Docs";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Hidan Club";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = club.hidan.docs;
+				PRODUCT_NAME = "Hidan Club Docs";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		560993F467DF1EFB13F5698F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Hidan Club Docs";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Hidan Club";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = club.hidan.docs;
+				PRODUCT_NAME = "Hidan Club Docs";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		937133885E7E8BABA18CBE26 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		DA58EE97717BB6E3A550A530 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		97C9442EB1348EB77BF4A2F2 /* Build configuration list for PBXNativeTarget "HidanClubDocs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				560993F467DF1EFB13F5698F /* Debug */,
+				352C16820608234B284102F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9812DAFCA8EABA4EB55DC462 /* Build configuration list for PBXProject "HidanClubDocs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA58EE97717BB6E3A550A530 /* Debug */,
+				937133885E7E8BABA18CBE26 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2F254454212097A2FEECFD80 /* Project object */;
+}
